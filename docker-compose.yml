@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  voice-notes-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: voice-notes-api
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount Obsidian vault directory (update path as needed)
+      - ${OBSIDIAN_VAULT_PATH:-./obsidian-vault}:/vault
+      # Mount app code for development hot-reload
+      - ./app:/app/app:ro
+    environment:
+      - APP_NAME=Dialtone
+      - APP_VERSION=0.1.0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - OBSIDIAN_VAULT_PATH=/vault
+      - MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE:-52428800}  # 50MB
+      - PROCESSING_TIMEOUT=${PROCESSING_TIMEOUT:-35}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - dialtone-network
+
+networks:
+  dialtone-network:
+    driver: bridge
