@@ -27,7 +27,7 @@ async def health_check() -> Dict[str, Any]:
         "version": __version__,
         "app_name": settings.app_name,
         "features": {
-            "audio_upload": False,  # Will be True after issue #2
+            "audio_upload": True,  # Completed in issue #2
             "transcription": False,  # Will be True after issue #3
             "summarization": False,  # Will be True after issue #9
         },
@@ -44,15 +44,17 @@ async def health_check() -> Dict[str, Any]:
 async def readiness_check() -> Dict[str, bool]:
     """Check if all services are ready."""
     # Check vault path is accessible
-    vault_ready = settings.obsidian_vault_path.exists() and settings.obsidian_vault_path.is_dir()
-    
+    vault_ready = (
+        settings.obsidian_vault_path.exists() and settings.obsidian_vault_path.is_dir()
+    )
+
     # Future checks will include:
     # - Whisper model loaded
     # - Ollama connection
     # - Database connection
-    
+
     all_ready = vault_ready
-    
+
     return {
         "ready": all_ready,
         "vault_accessible": vault_ready,
