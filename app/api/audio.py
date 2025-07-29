@@ -6,7 +6,14 @@ from typing import Union
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile, status
 from fastapi.responses import JSONResponse
 
-from app.models.audio import UploadError, UploadResponse
+from app.models.audio import (
+    TranscriptionError,
+    TranscriptionRequest,
+    TranscriptionResponse,
+    UploadError,
+    UploadResponse,
+)
+from app.services.transcription import transcription_service
 from app.services.upload import upload_service
 
 logger = logging.getLogger(__name__)
@@ -104,6 +111,108 @@ async def upload_audio(
             content={
                 "error": "Internal server error",
                 "error_code": "INTERNAL_ERROR",
+                "request_id": request_id,
+            },
+        )
+
+
+@router.post(
+    "/transcribe",
+    response_model=TranscriptionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Transcribe uploaded audio",
+    description="Transcribe an uploaded audio file using Whisper AI",
+    responses={
+        200: {"model": TranscriptionResponse, "description": "Transcription completed successfully"},
+        400: {"model": TranscriptionError, "description": "Invalid audio format or conversion error"},
+        404: {"model": TranscriptionError, "description": "Upload not found"},
+        408: {"model": TranscriptionError, "description": "Transcription timeout"},
+        422: {"description": "Validation error"},
+        500: {"model": TranscriptionError, "description": "Transcription processing error"},
+        503: {"model": TranscriptionError, "description": "Transcription service unavailable"},
+    },
+)
+async def transcribe_audio(
+    request: Request,
+    transcription_request: TranscriptionRequest,
+) -> Union[TranscriptionResponse, JSONResponse]:
+    """
+    Transcribe an uploaded audio file using Whisper AI.
+
+    Takes an upload ID from a previous upload and transcribes the audio content.
+    Uses OpenAI Whisper for local, privacy-first transcription.
+
+    - **upload_id**: ID from successful audio upload
+    - **language**: Optional language hint (e.g., 'en', 'es', 'fr')
+    """
+    request_id = getattr(request.state, "request_id", "unknown")
+    upload_id = transcription_request.upload_id
+
+    logger.info(
+        "Transcription request started",
+        extra={
+            "request_id": request_id,
+            "upload_id": upload_id,
+            "language": transcription_request.language,
+        },
+    )
+
+    try:
+        # Process transcription
+        transcription_data = await transcription_service.transcribe_upload(
+            upload_id=upload_id,
+            language=transcription_request.language,
+        )
+
+        logger.info(
+            "Transcription completed successfully",
+            extra={
+                "request_id": request_id,
+                "upload_id": upload_id,
+                "processing_time": transcription_data["processing_time_seconds"],
+                "text_length": len(transcription_data["transcription"]["text"]),
+                "detected_language": transcription_data["transcription"]["language"],
+            },
+        )
+
+        return TranscriptionResponse(**transcription_data)
+
+    except HTTPException as e:
+        # Log the error but don't expose internal details
+        logger.warning(
+            "Transcription request failed",
+            extra={
+                "request_id": request_id,
+                "upload_id": upload_id,
+                "error": str(e.detail),
+                "status_code": e.status_code,
+            },
+        )
+
+        # Enhance error response with request ID
+        error_detail = e.detail
+        if isinstance(error_detail, dict):
+            error_detail["request_id"] = request_id
+
+        return JSONResponse(status_code=e.status_code, content=error_detail)
+
+    except Exception as e:
+        # Handle unexpected errors
+        logger.error(
+            "Unexpected error during transcription",
+            extra={
+                "request_id": request_id,
+                "upload_id": upload_id,
+                "error": str(e),
+            },
+            exc_info=True,
+        )
+
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "error": "Internal transcription error",
+                "error_code": "TRANSCRIPTION_ERROR",
                 "request_id": request_id,
             },
         )
