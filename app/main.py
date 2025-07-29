@@ -33,9 +33,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             },
         },
     )
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down Dialtone API")
 
@@ -44,7 +44,7 @@ def create_app() -> FastAPI:
     """Create and configure FastAPI application."""
     # Setup logging first
     setup_logging()
-    
+
     # Create FastAPI app
     app = FastAPI(
         title=settings.app_name,
@@ -55,7 +55,7 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
         openapi_url="/openapi.json",
     )
-    
+
     # Add CORS middleware for PWA frontend
     app.add_middleware(
         CORSMiddleware,
@@ -64,14 +64,14 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     # Add request ID middleware
     @app.middleware("http")
     async def add_request_id(request: Request, call_next):
         """Add request ID for tracking."""
         request_id = f"{time.time():.6f}"
         request.state.request_id = request_id
-        
+
         # Log request
         logger.info(
             "Request started",
@@ -81,12 +81,12 @@ def create_app() -> FastAPI:
                 "path": request.url.path,
             },
         )
-        
+
         # Process request
         start_time = time.time()
         response = await call_next(request)
         duration = time.time() - start_time
-        
+
         # Log response
         logger.info(
             "Request completed",
@@ -96,11 +96,11 @@ def create_app() -> FastAPI:
                 "duration_ms": round(duration * 1000, 2),
             },
         )
-        
+
         # Add request ID to response headers
         response.headers["X-Request-ID"] = request_id
         return response
-    
+
     # Exception handler
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
@@ -122,7 +122,7 @@ def create_app() -> FastAPI:
                 "request_id": request_id,
             },
         )
-    
+
     # Root endpoint
     @app.get("/", response_model=Dict[str, Any])
     async def root():
@@ -134,11 +134,11 @@ def create_app() -> FastAPI:
             "docs": "/docs",
             "health": "/health",
         }
-    
+
     # Include routers
     app.include_router(health.router)
     app.include_router(audio.router)
-    
+
     return app
 
 
