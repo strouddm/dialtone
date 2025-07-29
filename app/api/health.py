@@ -27,7 +27,7 @@ async def health_check() -> Dict[str, Any]:
         "version": __version__,
         "app_name": settings.app_name,
         "features": {
-            "audio_upload": False,  # Will be True after issue #2
+            "audio_upload": True,   # Completed in issue #2
             "transcription": False,  # Will be True after issue #3
             "summarization": False,  # Will be True after issue #9
         },

@@ -29,6 +29,10 @@ class Settings(BaseSettings):
         default=Path("/vault"),
         description="Path to Obsidian vault"
     )
+    upload_dir: Path = Field(
+        default=Path("/tmp/voice-notes/uploads"),
+        description="Directory for temporary upload storage"
+    )
     
     # Processing limits
     max_upload_size: int = Field(
@@ -48,6 +52,18 @@ class Settings(BaseSettings):
         description="Maximum concurrent processing requests",
         ge=1,
         le=10
+    )
+    
+    # Audio processing
+    supported_audio_types: list[str] = Field(
+        default=["audio/webm", "audio/mp4", "audio/mpeg"],
+        description="Supported audio MIME types"
+    )
+    upload_cleanup_hours: int = Field(
+        default=1,
+        description="Hours to keep uploaded files before cleanup",
+        ge=1,
+        le=24
     )
     
     # Server
@@ -75,6 +91,17 @@ class Settings(BaseSettings):
                 v.mkdir(parents=True, exist_ok=True)
             except Exception as e:
                 raise ValueError(f"Cannot create vault path: {e}")
+        return v
+    
+    @field_validator("upload_dir")
+    @classmethod
+    def validate_upload_dir(cls, v: Path) -> Path:
+        """Ensure upload directory exists or can be created."""
+        if not v.exists():
+            try:
+                v.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                raise ValueError(f"Cannot create upload directory: {e}")
         return v
 
 

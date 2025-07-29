@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app import __version__
-from app.api import health
+from app.api import audio, health
 from app.config import setup_logging
 from app.core.settings import settings
 
@@ -137,6 +137,7 @@ def create_app() -> FastAPI:
     
     # Include routers
     app.include_router(health.router)
+    app.include_router(audio.router)
     
     return app
 

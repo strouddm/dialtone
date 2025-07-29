@@ -35,7 +35,7 @@ def test_health_check():
     
     # Check feature flags
     assert "features" in data
-    assert data["features"]["audio_upload"] is False
+    assert data["features"]["audio_upload"] is True
     assert data["features"]["transcription"] is False
     assert data["features"]["summarization"] is False
 
