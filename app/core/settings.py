@@ -59,6 +59,32 @@ class Settings(BaseSettings):
         le=24,
     )
 
+    # Whisper transcription
+    whisper_model_size: str = Field(
+        default="base",
+        description="Whisper model size (tiny, base, small, medium, large)",
+    )
+    whisper_device: str = Field(
+        default="cpu",
+        description="Device for Whisper processing (cpu, cuda)",
+    )
+    whisper_compute_type: str = Field(
+        default="int8",
+        description="Compute type for Whisper (int8, int16, float16, float32)",
+    )
+    max_concurrent_transcriptions: int = Field(
+        default=2,
+        description="Maximum concurrent transcriptions",
+        ge=1,
+        le=5,
+    )
+    transcription_timeout: int = Field(
+        default=300,
+        description="Transcription timeout in seconds",
+        ge=60,
+        le=900,
+    )
+
     # Server
     api_host: str = Field(default="0.0.0.0", description="API host")
     api_port: int = Field(default=8000, description="API port", ge=1, le=65535)

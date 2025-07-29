@@ -271,3 +271,228 @@ class TestConcurrentUploads:
 
             # Should have different upload IDs
             assert data1["upload_id"] != data2["upload_id"]
+
+
+class TestTranscribeEndpoint:
+    """Test audio transcription endpoint."""
+
+    def test_transcribe_endpoint_exists(self, client):
+        """Test that transcribe endpoint exists and accepts POST."""
+        # Test without request body should return 422 (validation error)
+        response = client.post("/api/v1/audio/transcribe")
+        assert response.status_code == 422  # Missing required request body
+
+    @patch("app.services.transcription.transcription_service.transcribe_upload")
+    def test_transcribe_success(self, mock_transcribe, client):
+        """Test successful transcription."""
+        # Mock successful transcription
+        mock_transcribe.return_value = {
+            "upload_id": "test-123-456",
+            "transcription": {
+                "text": "This is a test transcription",
+                "language": "en",
+                "confidence": 0.95,
+                "duration_seconds": 10.5,
+            },
+            "processing_time_seconds": 12.3,
+            "status": "completed",
+        }
+
+        request_data = {"upload_id": "test-123-456"}
+        response = client.post("/api/v1/audio/transcribe", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["upload_id"] == "test-123-456"
+        assert data["transcription"]["text"] == "This is a test transcription"
+        assert data["transcription"]["language"] == "en"
+        assert data["transcription"]["confidence"] == 0.95
+        assert data["transcription"]["duration_seconds"] == 10.5
+        assert data["processing_time_seconds"] == 12.3
+        assert data["status"] == "completed"
+
+        mock_transcribe.assert_called_once_with(
+            upload_id="test-123-456", language=None
+        )
+
+    @patch("app.services.transcription.transcription_service.transcribe_upload")
+    def test_transcribe_with_language(self, mock_transcribe, client):
+        """Test transcription with language hint."""
+        mock_transcribe.return_value = {
+            "upload_id": "test-123",
+            "transcription": {
+                "text": "Esta es una transcripción de prueba",
+                "language": "es",
+                "confidence": 0.92,
+                "duration_seconds": 8.0,
+            },
+            "processing_time_seconds": 10.1,
+            "status": "completed",
+        }
+
+        request_data = {"upload_id": "test-123", "language": "es"}
+        response = client.post("/api/v1/audio/transcribe", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["transcription"]["language"] == "es"
+
+        mock_transcribe.assert_called_once_with(
+            upload_id="test-123", language="es"
+        )
+
+    def test_transcribe_missing_upload_id(self, client):
+        """Test transcription without upload_id."""
+        request_data = {}
+        response = client.post("/api/v1/audio/transcribe", json=request_data)
+
+        assert response.status_code == 422
+        data = response.json()
+        assert "detail" in data
+
+    def test_transcribe_invalid_request_format(self, client):
+        """Test transcription with invalid request format."""
+        # Send string instead of JSON object
+        response = client.post("/api/v1/audio/transcribe", json="invalid")
+
+        assert response.status_code == 422
+
+    @patch("app.services.transcription.transcription_service.transcribe_upload")
+    def test_transcribe_upload_not_found(self, mock_transcribe, client):
+        """Test transcription with non-existent upload."""
+        from fastapi import HTTPException
+        
+        mock_transcribe.side_effect = HTTPException(
+            status_code=404,
+            detail={
+                "error": "Upload nonexistent not found",
+                "error_code": "UPLOAD_NOT_FOUND",
+            }
+        )
+
+        request_data = {"upload_id": "nonexistent"}
+        response = client.post("/api/v1/audio/transcribe", json=request_data)
+
+        assert response.status_code == 404
+        data = response.json()
+        assert data["error_code"] == "UPLOAD_NOT_FOUND"
+
+    @patch("app.services.transcription.transcription_service.transcribe_upload")
+    def test_transcribe_timeout(self, mock_transcribe, client):
+        """Test transcription timeout."""
+        from fastapi import HTTPException
+        
+        mock_transcribe.side_effect = HTTPException(
+            status_code=408,
+            detail={
+                "error": "Transcription timeout after 300 seconds",
+                "error_code": "TRANSCRIPTION_TIMEOUT",
+                "timeout_seconds": 300,
+            }
+        )
+
+        request_data = {"upload_id": "timeout-test"}
+        response = client.post("/api/v1/audio/transcribe", json=request_data)
+
+        assert response.status_code == 408
+        data = response.json()
+        assert data["error_code"] == "TRANSCRIPTION_TIMEOUT"
+        assert data["timeout_seconds"] == 300
+
+    @patch("app.services.transcription.transcription_service.transcribe_upload")
+    def test_transcribe_conversion_error(self, mock_transcribe, client):
+        """Test transcription with audio conversion error."""
+        from fastapi import HTTPException
+        
+        mock_transcribe.side_effect = HTTPException(
+            status_code=400,
+            detail={
+                "error": "Audio conversion failed",
+                "error_code": "CONVERSION_ERROR",
+                "details": "FFmpeg conversion failed",
+            }
+        )
+
+        request_data = {"upload_id": "bad-audio"}
+        response = client.post("/api/v1/audio/transcribe", json=request_data)
+
+        assert response.status_code == 400
+        data = response.json()
+        assert data["error_code"] == "CONVERSION_ERROR"
+
+    @patch("app.services.transcription.transcription_service.transcribe_upload")
+    def test_transcribe_service_unavailable(self, mock_transcribe, client):
+        """Test transcription when service is unavailable."""
+        from fastapi import HTTPException
+        
+        mock_transcribe.side_effect = HTTPException(
+            status_code=503,
+            detail={
+                "error": "Transcription service unavailable",
+                "error_code": "SERVICE_UNAVAILABLE",
+            }
+        )
+
+        request_data = {"upload_id": "service-down"}
+        response = client.post("/api/v1/audio/transcribe", json=request_data)
+
+        assert response.status_code == 503
+        data = response.json()
+        assert data["error_code"] == "SERVICE_UNAVAILABLE"
+
+    @patch("app.services.transcription.transcription_service.transcribe_upload")
+    def test_transcribe_server_error(self, mock_transcribe, client):
+        """Test transcription server error handling."""
+        # Mock service raising unexpected exception
+        mock_transcribe.side_effect = Exception("Unexpected database error")
+
+        request_data = {"upload_id": "error-test"}
+        response = client.post("/api/v1/audio/transcribe", json=request_data)
+
+        assert response.status_code == 500
+        data = response.json()
+        assert data["error_code"] == "TRANSCRIPTION_ERROR"
+        assert "request_id" in data
+
+    @patch("app.services.transcription.transcription_service.transcribe_upload")
+    def test_transcribe_request_id_in_response(self, mock_transcribe, client):
+        """Test that request ID is included in transcription response."""
+        mock_transcribe.return_value = {
+            "upload_id": "test-id",
+            "transcription": {
+                "text": "Test transcription",
+                "language": "en",
+                "confidence": 0.9,
+                "duration_seconds": 5.0,
+            },
+            "processing_time_seconds": 8.0,
+            "status": "completed",
+        }
+
+        request_data = {"upload_id": "test-id"}
+        response = client.post("/api/v1/audio/transcribe", json=request_data)
+
+        assert response.status_code == 200
+        assert "X-Request-ID" in response.headers
+        assert response.headers["X-Request-ID"] is not None
+
+    def test_transcribe_endpoint_documentation(self, client):
+        """Test that transcribe endpoint is documented in OpenAPI."""
+        response = client.get("/openapi.json")
+        assert response.status_code == 200
+        
+        openapi_spec = response.json()
+        paths = openapi_spec.get("paths", {})
+        transcribe_path = paths.get("/api/v1/audio/transcribe", {})
+        
+        # Check that POST method exists
+        assert "post" in transcribe_path
+        
+        # Check response schemas are defined
+        post_spec = transcribe_path["post"]
+        assert "responses" in post_spec
+        assert "200" in post_spec["responses"]
+        assert "400" in post_spec["responses"]
+        assert "404" in post_spec["responses"]
+        assert "408" in post_spec["responses"]
