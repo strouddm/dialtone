@@ -175,7 +175,8 @@ class WhisperModelManager:
                 },
             )
 
-            return result
+            # Cast result to expected type for mypy
+            return dict(result)
 
         except MemoryError as e:
             error_msg = f"Insufficient memory for transcription: {str(e)}"

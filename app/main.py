@@ -106,9 +106,9 @@ def create_app() -> FastAPI:
     app.add_middleware(LoggingMiddleware)
 
     # Register exception handlers
-    app.add_exception_handler(VoiceNotesError, voice_notes_error_handler)
-    app.add_exception_handler(RequestValidationError, validation_error_handler)
-    app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+    app.add_exception_handler(VoiceNotesError, voice_notes_error_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]  
+    app.add_exception_handler(StarletteHTTPException, http_exception_handler)  # type: ignore[arg-type]
     app.add_exception_handler(Exception, general_exception_handler)
 
     # Root endpoint

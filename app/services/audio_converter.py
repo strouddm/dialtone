@@ -151,10 +151,11 @@ class AudioConverter:
             channels = int(stream.get("channels", 0))
 
             # Needs conversion if not 16kHz mono WAV
-            return (
+            needs_conversion: bool = (
                 sample_rate != self.target_sample_rate
                 or channels != self.target_channels
             )
+            return needs_conversion
 
         except Exception as e:
             logger.warning(

@@ -157,7 +157,7 @@ class TranscriptionService:
                 processing_time = time.time() - start_time
 
                 # Format response
-                response = {
+                response: Dict[str, Any] = {
                     "upload_id": upload_id,
                     "transcription": {
                         "text": result.get("text", "").strip(),
@@ -236,7 +236,7 @@ class TranscriptionService:
                 confidences.append(conf)
 
         if confidences:
-            return round(sum(confidences) / len(confidences), 2)
+            return float(round(sum(confidences) / len(confidences), 2))
 
         # Fallback: estimate based on text characteristics
         text = whisper_result.get("text", "").strip()
