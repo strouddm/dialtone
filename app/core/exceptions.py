@@ -36,8 +36,6 @@ class ValidationError(VoiceNotesError):
 class AudioValidationError(ValidationError):
     """Specific validation errors for audio files."""
 
-    pass
-
 
 class FileSizeError(ValidationError):
     """Error when file size exceeds limits."""
@@ -77,13 +75,9 @@ class ServiceError(VoiceNotesError):
 class WhisperError(ServiceError):
     """Errors related to Whisper transcription service."""
 
-    pass
-
 
 class AudioProcessingError(ServiceError):
     """Errors during audio processing/conversion."""
-
-    pass
 
 
 class ResourceExhaustedError(ServiceError):

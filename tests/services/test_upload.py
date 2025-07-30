@@ -1,10 +1,9 @@
 """Tests for upload service."""
 
+from unittest.mock import AsyncMock, Mock
+
 import pytest
-from pathlib import Path
-from unittest.mock import AsyncMock, Mock, patch
 from fastapi import HTTPException, UploadFile
-from io import BytesIO
 
 from app.services.upload import UploadService
 

@@ -1,7 +1,7 @@
 """Validators for request data."""
 import mimetypes
 from pathlib import Path
-from typing import BinaryIO, Optional
+from typing import Optional
 
 from fastapi import UploadFile
 

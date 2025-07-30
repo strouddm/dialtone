@@ -1,7 +1,6 @@
 """Audio converter service for format conversion using ffmpeg."""
 
 import logging
-import tempfile
 from pathlib import Path
 from typing import Tuple
 
@@ -24,11 +23,11 @@ class AudioConverter:
         self, input_path: Path, output_dir: Path
     ) -> Tuple[Path, float]:
         """Convert audio file to Whisper-compatible format.
-        
+
         Args:
             input_path: Path to input audio file
             output_dir: Directory to store converted file
-            
+
         Returns:
             Tuple of (converted_file_path, duration_seconds)
         """
@@ -50,20 +49,18 @@ class AudioConverter:
             # Get input file info
             probe = ffmpeg.probe(str(input_path))
             duration = float(probe["format"]["duration"])
-            
+
             # Get audio stream info
             audio_streams = [
-                stream for stream in probe["streams"] 
-                if stream["codec_type"] == "audio"
+                stream for stream in probe["streams"] if stream["codec_type"] == "audio"
             ]
-            
+
             if not audio_streams:
                 raise ValueError("No audio stream found in file")
 
             # Convert audio using ffmpeg
             (
-                ffmpeg
-                .input(str(input_path))
+                ffmpeg.input(str(input_path))
                 .output(
                     str(output_path),
                     acodec="pcm_s16le",  # 16-bit PCM
@@ -92,7 +89,9 @@ class AudioConverter:
             return output_path, duration
 
         except ffmpeg.Error as e:
-            error_msg = f"FFmpeg conversion failed: {e.stderr.decode() if e.stderr else str(e)}"
+            error_msg = (
+                f"FFmpeg conversion failed: {e.stderr.decode() if e.stderr else str(e)}"
+            )
             logger.error(
                 "Audio conversion failed",
                 extra={
@@ -132,31 +131,31 @@ class AudioConverter:
         """Check if file needs conversion for Whisper compatibility."""
         try:
             probe = ffmpeg.probe(str(file_path))
-            
+
             # Check if it's already a WAV file with correct specs
             format_name = probe["format"]["format_name"]
             if "wav" not in format_name.lower():
                 return True
-                
+
             # Check audio stream properties
             audio_streams = [
-                stream for stream in probe["streams"] 
-                if stream["codec_type"] == "audio"
+                stream for stream in probe["streams"] if stream["codec_type"] == "audio"
             ]
-            
+
             if not audio_streams:
                 return True
-                
+
             stream = audio_streams[0]
             sample_rate = int(stream.get("sample_rate", 0))
             channels = int(stream.get("channels", 0))
-            
+
             # Needs conversion if not 16kHz mono WAV
-            return (
-                sample_rate != self.target_sample_rate 
+            needs_conversion: bool = (
+                sample_rate != self.target_sample_rate
                 or channels != self.target_channels
             )
-            
+            return needs_conversion
+
         except Exception as e:
             logger.warning(
                 "Could not probe audio file, assuming conversion needed",
@@ -168,18 +167,17 @@ class AudioConverter:
         """Get audio file information."""
         try:
             probe = ffmpeg.probe(str(file_path))
-            
+
             format_info = probe["format"]
             audio_streams = [
-                stream for stream in probe["streams"] 
-                if stream["codec_type"] == "audio"
+                stream for stream in probe["streams"] if stream["codec_type"] == "audio"
             ]
-            
+
             if not audio_streams:
                 raise ValueError("No audio stream found")
-                
+
             stream = audio_streams[0]
-            
+
             return {
                 "duration": float(format_info.get("duration", 0)),
                 "size": int(format_info.get("size", 0)),
@@ -187,9 +185,11 @@ class AudioConverter:
                 "codec": stream.get("codec_name", "unknown"),
                 "sample_rate": int(stream.get("sample_rate", 0)),
                 "channels": int(stream.get("channels", 0)),
-                "bit_rate": int(stream.get("bit_rate", 0)) if stream.get("bit_rate") else None,
+                "bit_rate": int(stream.get("bit_rate", 0))
+                if stream.get("bit_rate")
+                else None,
             }
-            
+
         except Exception as e:
             logger.error(
                 "Failed to get audio info",

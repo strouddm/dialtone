@@ -49,7 +49,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         logger = logging.getLogger(__name__)
 
         logger.info(
-            f"Request completed",
+            "Request completed",
             extra={
                 "request_id": getattr(request.state, "request_id", None),
                 "method": request.method,

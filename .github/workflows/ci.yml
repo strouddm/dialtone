@@ -81,6 +81,10 @@ jobs:
         pip install -r requirements-dev.txt
         
     - name: Run tests with coverage
+      env:
+        TESTING: "true"
+        OBSIDIAN_VAULT_PATH: "/tmp/test-vault"
+        UPLOAD_DIR: "/tmp/test-uploads"
       run: |
         python -m pytest \
           --cov=app \

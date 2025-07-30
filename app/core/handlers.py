@@ -1,19 +1,12 @@
 """Exception handlers for FastAPI application."""
 import logging
-import traceback
-from typing import Any
 
 from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.core.exceptions import (
-    RateLimitError,
-    ServiceError,
-    ValidationError,
-    VoiceNotesError,
-)
+from app.core.exceptions import RateLimitError, ServiceError, VoiceNotesError
 from app.models.common import ErrorResponse
 
 logger = logging.getLogger(__name__)
@@ -34,7 +27,7 @@ async def voice_notes_error_handler(
 
     # Log error with context
     logger.error(
-        f"Error handling request",
+        "Error handling request",
         extra={
             "request_id": request_id,
             "error_code": exc.error_code,
@@ -84,7 +77,7 @@ async def validation_error_handler(
     )
 
     logger.warning(
-        f"Validation error",
+        "Validation error",
         extra={
             "request_id": request_id,
             "path": request.url.path,
@@ -124,7 +117,7 @@ async def http_exception_handler(
     )
 
     logger.warning(
-        f"HTTP exception",
+        "HTTP exception",
         extra={
             "request_id": request_id,
             "status_code": exc.status_code,
@@ -145,7 +138,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 
     # Log full traceback for unexpected errors
     logger.error(
-        f"Unexpected error",
+        "Unexpected error",
         extra={
             "request_id": request_id,
             "path": request.url.path,

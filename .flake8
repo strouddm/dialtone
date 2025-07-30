@@ -1,0 +1,16 @@
+[flake8]
+max-line-length = 88
+extend-ignore = E203,W503,E501
+per-file-ignores =
+    # Allow longer lines in API documentation examples
+    app/api/*.py:E501
+    # Allow longer lines in health monitoring examples
+    app/core/health/monitors.py:E501
+exclude = 
+    .git,
+    __pycache__,
+    venv,
+    .venv,
+    migrations,
+    build,
+    dist

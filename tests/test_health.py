@@ -1,13 +1,12 @@
 """Tests for health endpoints."""
 
-import pytest
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
-from unittest.mock import patch, Mock
 
-from app.main import app
 from app import __version__
-from app.core.health.models import HealthStatus, SystemMetrics, HealthCheck
-
+from app.core.health.models import HealthCheck, HealthStatus, SystemMetrics
+from app.main import app
 
 client = TestClient(app)
 
@@ -24,9 +23,9 @@ def test_root_endpoint():
     assert "health" in data
 
 
-@patch('app.core.health.monitors.SystemMonitor.get_system_metrics')
-@patch('app.core.health.monitors.SystemMonitor.get_health_checks')
-@patch('app.core.health.monitors.SystemMonitor.check_service_dependencies')
+@patch("app.core.health.monitors.SystemMonitor.get_system_metrics")
+@patch("app.core.health.monitors.SystemMonitor.get_health_checks")
+@patch("app.core.health.monitors.SystemMonitor.check_service_dependencies")
 def test_health_check(mock_services, mock_checks, mock_metrics):
     """Test enhanced health check endpoint."""
     # Mock system metrics
@@ -36,25 +35,25 @@ def test_health_check(mock_services, mock_checks, mock_metrics):
         memory_used_gb=8.0,
         memory_total_gb=16.0,
         disk_percent=60.0,
-        load_average=[1.0, 1.2, 1.5]
+        load_average=[1.0, 1.2, 1.5],
     )
-    
+
     # Mock health checks
     mock_checks.return_value = [
         HealthCheck(
             name="memory_usage",
             status=HealthStatus.HEALTHY,
-            message="Memory usage normal"
+            message="Memory usage normal",
         )
     ]
-    
+
     # Mock service dependencies
     mock_services.return_value = {
         "fastapi": HealthStatus.HEALTHY,
         "whisper": HealthStatus.HEALTHY,
-        "ollama": HealthStatus.HEALTHY
+        "ollama": HealthStatus.HEALTHY,
     }
-    
+
     response = client.get("/health")
     assert response.status_code == 200
 
@@ -72,13 +71,13 @@ def test_health_check(mock_services, mock_checks, mock_metrics):
     assert data["system"]["memory_total_gb"] == 16.0
     assert data["system"]["disk_percent"] == 60.0
     assert data["system"]["load_average"] == [1.0, 1.2, 1.5]
-    
+
     # Check services
     assert "services" in data
     assert data["services"]["fastapi"] == "healthy"
     assert data["services"]["whisper"] == "healthy"
     assert data["services"]["ollama"] == "healthy"
-    
+
     # Check health checks
     assert "checks" in data
     assert len(data["checks"]) == 1
@@ -90,7 +89,7 @@ def test_health_check(mock_services, mock_checks, mock_metrics):
     assert data["features"]["audio_upload"] is True
     assert data["features"]["transcription"] is True
     assert data["features"]["summarization"] is False
-    
+
     # Check uptime
     assert "uptime_seconds" in data
     assert isinstance(data["uptime_seconds"], float)
@@ -112,17 +111,21 @@ def test_readiness_check():
     assert data["ollama_connected"] is False
 
 
-@patch('app.core.health.monitors.SystemMonitor.get_system_metrics')
-@patch('app.core.health.monitors.SystemMonitor.get_health_checks')
-@patch('app.core.health.monitors.SystemMonitor.check_service_dependencies')
+@patch("app.core.health.monitors.SystemMonitor.get_system_metrics")
+@patch("app.core.health.monitors.SystemMonitor.get_health_checks")
+@patch("app.core.health.monitors.SystemMonitor.check_service_dependencies")
 def test_health_check_performance(mock_services, mock_checks, mock_metrics):
     """Test health check responds within 500ms requirement."""
     import time
-    
+
     # Mock quick responses
     mock_metrics.return_value = SystemMetrics(
-        cpu_percent=25.0, memory_percent=50.0, memory_used_gb=8.0,
-        memory_total_gb=16.0, disk_percent=60.0, load_average=[1.0, 1.2, 1.5]
+        cpu_percent=25.0,
+        memory_percent=50.0,
+        memory_used_gb=8.0,
+        memory_total_gb=16.0,
+        disk_percent=60.0,
+        load_average=[1.0, 1.2, 1.5],
     )
     mock_checks.return_value = [
         HealthCheck(name="test", status=HealthStatus.HEALTHY, message="OK")
@@ -137,9 +140,9 @@ def test_health_check_performance(mock_services, mock_checks, mock_metrics):
     assert duration < 0.5  # Should respond in less than 500ms requirement
 
 
-@patch('app.core.health.monitors.SystemMonitor.get_system_metrics')
-@patch('app.core.health.monitors.SystemMonitor.get_health_checks')
-@patch('app.core.health.monitors.SystemMonitor.check_service_dependencies')
+@patch("app.core.health.monitors.SystemMonitor.get_system_metrics")
+@patch("app.core.health.monitors.SystemMonitor.get_health_checks")
+@patch("app.core.health.monitors.SystemMonitor.check_service_dependencies")
 def test_health_check_degraded_status(mock_services, mock_checks, mock_metrics):
     """Test health check with degraded system status."""
     # Mock degraded system metrics
@@ -149,29 +152,29 @@ def test_health_check_degraded_status(mock_services, mock_checks, mock_metrics):
         memory_used_gb=13.6,
         memory_total_gb=16.0,
         disk_percent=60.0,
-        load_average=[2.0, 2.5, 3.0]
+        load_average=[2.0, 2.5, 3.0],
     )
-    
+
     # Mock degraded health checks
     mock_checks.return_value = [
         HealthCheck(
             name="memory_usage",
             status=HealthStatus.DEGRADED,
-            message="Memory usage high: 85%"
+            message="Memory usage high: 85%",
         ),
         HealthCheck(
-            name="cpu_usage", 
+            name="cpu_usage",
             status=HealthStatus.DEGRADED,
-            message="CPU usage high: 75%"
-        )
+            message="CPU usage high: 75%",
+        ),
     ]
-    
+
     mock_services.return_value = {
         "fastapi": HealthStatus.HEALTHY,
         "whisper": HealthStatus.HEALTHY,
-        "ollama": HealthStatus.HEALTHY
+        "ollama": HealthStatus.HEALTHY,
     }
-    
+
     response = client.get("/health")
     assert response.status_code == 200
 
@@ -181,16 +184,17 @@ def test_health_check_degraded_status(mock_services, mock_checks, mock_metrics):
     assert data["system"]["memory_percent"] == 85.0
 
 
-@patch('app.core.health.service.HealthService.get_health_status')
+@patch("app.core.health.service.HealthService.get_health_status")
 def test_health_check_timeout_fallback(mock_get_health):
     """Test health check timeout fallback."""
     # Mock timeout scenario
     import asyncio
+
     async def timeout_response():
         await asyncio.sleep(0.5)  # Simulate timeout
-        
+
     mock_get_health.side_effect = timeout_response
-    
+
     response = client.get("/health")
     assert response.status_code == 200
     # The actual timeout handling is tested in the service tests
