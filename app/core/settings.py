@@ -106,9 +106,10 @@ class Settings(BaseSettings):
         """Ensure vault path exists or can be created."""
         # Skip directory creation in test environments
         import os
+
         if os.getenv("TESTING", "false").lower() == "true":
             return v
-            
+
         if not v.exists():
             try:
                 v.mkdir(parents=True, exist_ok=True)
@@ -122,9 +123,10 @@ class Settings(BaseSettings):
         """Ensure upload directory exists or can be created."""
         # Skip directory creation in test environments
         import os
+
         if os.getenv("TESTING", "false").lower() == "true":
             return v
-            
+
         if not v.exists():
             try:
                 v.mkdir(parents=True, exist_ok=True)
