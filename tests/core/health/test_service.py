@@ -185,6 +185,6 @@ class TestHealthService:
                 mock_response.uptime_seconds = 60.0
                 mock_perform.return_value = mock_response
 
-                response = await health_service.get_health_status()
+                await health_service.get_health_status()
                 # The actual uptime calculation happens in _perform_health_checks
                 # This test verifies the mocking works correctly
