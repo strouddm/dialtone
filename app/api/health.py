@@ -6,32 +6,24 @@ from typing import Dict, Any
 from fastapi import APIRouter, status
 
 from app import __version__
+from app.core.health import HealthResponse, HealthService
 from app.core.settings import settings
 
 
 router = APIRouter(tags=["health"])
+health_service = HealthService()
 
 
 @router.get(
     "/health",
     status_code=status.HTTP_200_OK,
-    response_model=Dict[str, Any],
+    response_model=HealthResponse,
     summary="Health check",
-    description="Check if the API is running and healthy",
+    description="Check if the API is running and healthy with comprehensive system monitoring",
 )
-async def health_check() -> Dict[str, Any]:
-    """Return health status and version information."""
-    return {
-        "status": "healthy",
-        "timestamp": time.time(),
-        "version": __version__,
-        "app_name": settings.app_name,
-        "features": {
-            "audio_upload": True,  # Completed in issue #2
-            "transcription": False,  # Will be True after issue #3
-            "summarization": False,  # Will be True after issue #9
-        },
-    }
+async def health_check() -> HealthResponse:
+    """Return comprehensive health status with system monitoring."""
+    return await health_service.get_health_status()
 
 
 @router.get(
