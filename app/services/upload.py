@@ -8,9 +8,16 @@ from pathlib import Path
 from typing import BinaryIO
 
 import aiofiles
-from fastapi import HTTPException, UploadFile, status
+from fastapi import UploadFile
 
+from app.core.exceptions import (
+    AudioProcessingError,
+    FileSizeError,
+    UnsupportedFormatError,
+    ValidationError,
+)
 from app.core.settings import settings
+from app.core.validators import validate_audio_file, validate_file_size_async
 
 logger = logging.getLogger(__name__)
 
@@ -26,34 +33,11 @@ class UploadService:
 
     async def validate_file(self, file: UploadFile) -> None:
         """Validate uploaded file."""
-        # Check if file exists
-        if not file.filename:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error": "No file provided", "error_code": "MISSING_FILE"},
-            )
-
-        # Check file size
-        if file.size and file.size > self.max_size:
-            raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail={
-                    "error": f"File too large. Maximum size is {self.max_size} bytes",
-                    "error_code": "FILE_TOO_LARGE",
-                    "max_size": self.max_size,
-                },
-            )
-
-        # Check MIME type
-        if file.content_type not in self.supported_types:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={
-                    "error": f"Unsupported file format: {file.content_type}",
-                    "error_code": "INVALID_FORMAT",
-                    "allowed_formats": self.supported_types,
-                },
-            )
+        # Use centralized validators
+        validate_audio_file(file)
+        
+        # Additional async validation if needed
+        await validate_file_size_async(file)
 
     def generate_upload_id(self) -> str:
         """Generate unique upload ID."""
@@ -112,14 +96,7 @@ class UploadService:
                         except Exception:
                             pass
 
-                        raise HTTPException(
-                            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                            detail={
-                                "error": f"File too large. Maximum size is {self.max_size} bytes",
-                                "error_code": "FILE_TOO_LARGE",
-                                "max_size": self.max_size,
-                            },
-                        )
+                        raise FileSizeError(file_size, self.max_size)
 
                     await f.write(content)
 
@@ -135,7 +112,7 @@ class UploadService:
 
             return stored_filename, file_size
 
-        except HTTPException:
+        except (ValidationError, FileSizeError, UnsupportedFormatError):
             raise
         except Exception as e:
             logger.error(
@@ -143,9 +120,10 @@ class UploadService:
                 extra={"upload_id": upload_id, "error": str(e)},
                 exc_info=True,
             )
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail={"error": "Failed to save file", "error_code": "STORAGE_ERROR"},
+            raise AudioProcessingError(
+                "Failed to save uploaded file",
+                error_code="STORAGE_ERROR",
+                details={"upload_id": upload_id}
             )
 
     async def process_upload(self, file: UploadFile) -> dict:

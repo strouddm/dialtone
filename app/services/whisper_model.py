@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional
 import whisper
 from whisper import Whisper
 
+from app.core.exceptions import ResourceExhaustedError, ServiceError, WhisperError
 from app.core.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -105,6 +106,15 @@ class WhisperModelManager:
                 },
             )
 
+        except MemoryError as e:
+            error_msg = f"Insufficient memory to load Whisper model: {str(e)}"
+            self._load_error = error_msg
+            logger.error(
+                "Whisper model loading failed - memory error",
+                extra={"error": error_msg},
+                exc_info=True,
+            )
+            raise ResourceExhaustedError("memory", error_msg) from e
         except Exception as e:
             error_msg = f"Failed to load Whisper model: {str(e)}"
             self._load_error = error_msg
@@ -113,7 +123,11 @@ class WhisperModelManager:
                 extra={"error": error_msg},
                 exc_info=True,
             )
-            raise RuntimeError(error_msg) from e
+            raise WhisperError(
+                error_msg,
+                error_code="MODEL_LOAD_ERROR",
+                details={"model_size": self._model_size, "device": self._device}
+            ) from e
 
         finally:
             self._loading = False
@@ -126,7 +140,11 @@ class WhisperModelManager:
     ) -> Dict[str, Any]:
         """Transcribe audio file using loaded model."""
         if self._model is None:
-            raise RuntimeError("Whisper model not loaded")
+            raise WhisperError(
+                "Whisper model not loaded",
+                error_code="MODEL_NOT_LOADED",
+                details={"loading": self.is_loading, "load_error": self.load_error}
+            )
 
         try:
             logger.info(
@@ -159,6 +177,17 @@ class WhisperModelManager:
 
             return result
 
+        except MemoryError as e:
+            error_msg = f"Insufficient memory for transcription: {str(e)}"
+            logger.error(
+                "Transcription failed - memory error",
+                extra={
+                    "audio_path": audio_path,
+                    "error": error_msg,
+                },
+                exc_info=True,
+            )
+            raise ResourceExhaustedError("memory", error_msg) from e
         except Exception as e:
             error_msg = f"Transcription failed: {str(e)}"
             logger.error(
@@ -169,7 +198,11 @@ class WhisperModelManager:
                 },
                 exc_info=True,
             )
-            raise RuntimeError(error_msg) from e
+            raise WhisperError(
+                error_msg,
+                error_code="TRANSCRIPTION_ERROR",
+                details={"audio_path": audio_path}
+            ) from e
 
     def get_model_info(self) -> Dict[str, Any]:
         """Get information about the loaded model."""

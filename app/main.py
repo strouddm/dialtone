@@ -6,12 +6,22 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Dict, Any
 
 from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import __version__
 from app.api import audio, health
 from app.config import setup_logging
+from app.core.exceptions import VoiceNotesError
+from app.core.handlers import (
+    general_exception_handler,
+    http_exception_handler,
+    validation_error_handler,
+    voice_notes_error_handler,
+)
+from app.core.middleware import LoggingMiddleware, RequestIDMiddleware
 from app.core.settings import settings
 
 
@@ -65,63 +75,15 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Add request ID middleware
-    @app.middleware("http")
-    async def add_request_id(request: Request, call_next):
-        """Add request ID for tracking."""
-        request_id = f"{time.time():.6f}"
-        request.state.request_id = request_id
+    # Add custom middleware
+    app.add_middleware(RequestIDMiddleware)
+    app.add_middleware(LoggingMiddleware)
 
-        # Log request
-        logger.info(
-            "Request started",
-            extra={
-                "request_id": request_id,
-                "method": request.method,
-                "path": request.url.path,
-            },
-        )
-
-        # Process request
-        start_time = time.time()
-        response = await call_next(request)
-        duration = time.time() - start_time
-
-        # Log response
-        logger.info(
-            "Request completed",
-            extra={
-                "request_id": request_id,
-                "status_code": response.status_code,
-                "duration_ms": round(duration * 1000, 2),
-            },
-        )
-
-        # Add request ID to response headers
-        response.headers["X-Request-ID"] = request_id
-        return response
-
-    # Exception handler
-    @app.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception):
-        """Handle uncaught exceptions."""
-        request_id = getattr(request.state, "request_id", "unknown")
-        logger.error(
-            "Unhandled exception",
-            extra={
-                "request_id": request_id,
-                "error": str(exc),
-                "type": type(exc).__name__,
-            },
-            exc_info=True,
-        )
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "error": "Internal server error",
-                "request_id": request_id,
-            },
-        )
+    # Register exception handlers
+    app.add_exception_handler(VoiceNotesError, voice_notes_error_handler)
+    app.add_exception_handler(RequestValidationError, validation_error_handler)
+    app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+    app.add_exception_handler(Exception, general_exception_handler)
 
     # Root endpoint
     @app.get("/", response_model=Dict[str, Any])
