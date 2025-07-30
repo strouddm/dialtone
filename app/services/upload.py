@@ -35,7 +35,7 @@ class UploadService:
         """Validate uploaded file."""
         # Use centralized validators
         validate_audio_file(file)
-        
+
         # Additional async validation if needed
         await validate_file_size_async(file)
 
@@ -123,7 +123,7 @@ class UploadService:
             raise AudioProcessingError(
                 "Failed to save uploaded file",
                 error_code="STORAGE_ERROR",
-                details={"upload_id": upload_id}
+                details={"upload_id": upload_id},
             )
 
     async def process_upload(self, file: UploadFile) -> dict:

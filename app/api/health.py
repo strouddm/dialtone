@@ -37,34 +37,34 @@ health_service = HealthService()
                             "memory_used_gb": 2.3,
                             "memory_total_gb": 5.0,
                             "disk_percent": 68.4,
-                            "load_average": [0.5, 0.8, 1.2]
+                            "load_average": [0.5, 0.8, 1.2],
                         },
                         "services": {
                             "whisper": "healthy",
                             "vault": "healthy",
-                            "storage": "healthy"
+                            "storage": "healthy",
                         },
                         "checks": [
                             {
                                 "name": "vault_access",
                                 "status": "healthy",
-                                "message": "Obsidian vault accessible"
+                                "message": "Obsidian vault accessible",
                             },
                             {
                                 "name": "whisper_model",
-                                "status": "healthy", 
-                                "message": "Whisper model loaded and ready"
-                            }
+                                "status": "healthy",
+                                "message": "Whisper model loaded and ready",
+                            },
                         ],
                         "features": {
                             "audio_upload": True,
                             "transcription": True,
-                            "vault_integration": True
+                            "vault_integration": True,
                         },
-                        "app_name": "Dialtone Voice Notes API"
+                        "app_name": "Dialtone Voice Notes API",
                     }
                 }
-            }
+            },
         },
         503: {
             "description": "Service is unhealthy",
@@ -81,36 +81,36 @@ health_service = HealthService()
                             "memory_used_gb": 4.9,
                             "memory_total_gb": 5.0,
                             "disk_percent": 95.8,
-                            "load_average": [8.5, 9.2, 10.1]
+                            "load_average": [8.5, 9.2, 10.1],
                         },
                         "services": {
                             "whisper": "unhealthy",
                             "vault": "healthy",
-                            "storage": "degraded"
+                            "storage": "degraded",
                         },
                         "checks": [
                             {
                                 "name": "vault_access",
                                 "status": "healthy",
-                                "message": "Obsidian vault accessible"
+                                "message": "Obsidian vault accessible",
                             },
                             {
                                 "name": "whisper_model",
                                 "status": "unhealthy",
-                                "message": "Whisper model failed to load"
-                            }
+                                "message": "Whisper model failed to load",
+                            },
                         ],
                         "features": {
                             "audio_upload": True,
                             "transcription": False,
-                            "vault_integration": True
+                            "vault_integration": True,
                         },
-                        "app_name": "Dialtone Voice Notes API"
+                        "app_name": "Dialtone Voice Notes API",
                     }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def health_check() -> HealthResponse:
     """Return comprehensive health status with system monitoring."""
@@ -133,10 +133,10 @@ async def health_check() -> HealthResponse:
                         "ready": True,
                         "vault_accessible": True,
                         "whisper_loaded": True,
-                        "ollama_connected": True
+                        "ollama_connected": True,
                     }
                 }
-            }
+            },
         },
         503: {
             "description": "One or more services are not ready",
@@ -146,12 +146,12 @@ async def health_check() -> HealthResponse:
                         "ready": False,
                         "vault_accessible": True,
                         "whisper_loaded": False,
-                        "ollama_connected": False
+                        "ollama_connected": False,
                     }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def readiness_check() -> Dict[str, bool]:
     """Check if all services are ready."""

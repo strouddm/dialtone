@@ -61,10 +61,7 @@ class TranscriptionService:
         return await self.transcribe_file(audio_file, upload_id, language)
 
     async def transcribe_file(
-        self, 
-        audio_file: Path, 
-        upload_id: str, 
-        language: Optional[str] = None
+        self, audio_file: Path, upload_id: str, language: Optional[str] = None
     ) -> Dict[str, Any]:
         """Transcribe a specific audio file."""
         start_time = time.time()
@@ -77,13 +74,13 @@ class TranscriptionService:
                         # Wait for model to finish loading
                         while whisper_manager.is_loading:
                             await asyncio.sleep(0.1)
-                    
+
                     if not whisper_manager.is_loaded:
                         await whisper_manager.load_model()
 
                 # Get audio file info
                 audio_info = await audio_converter.get_audio_info(audio_file)
-                
+
                 logger.info(
                     "Audio file info",
                     extra={
@@ -98,14 +95,20 @@ class TranscriptionService:
                 # Convert audio if needed
                 processed_audio_path = audio_file
                 conversion_needed = audio_converter.is_conversion_needed(audio_file)
-                
+
                 if conversion_needed:
                     logger.info(
                         "Converting audio for Whisper compatibility",
-                        extra={"upload_id": upload_id, "original_format": audio_info["format"]},
+                        extra={
+                            "upload_id": upload_id,
+                            "original_format": audio_info["format"],
+                        },
                     )
-                    
-                    processed_audio_path, duration = await audio_converter.convert_to_whisper_format(
+
+                    (
+                        processed_audio_path,
+                        duration,
+                    ) = await audio_converter.convert_to_whisper_format(
                         audio_file, audio_file.parent
                     )
                 else:
@@ -119,24 +122,27 @@ class TranscriptionService:
                             language=language,
                         )
                     )
-                    
+
                     self._active_transcriptions[upload_id] = transcription_task
-                    
+
                     result = await asyncio.wait_for(
                         transcription_task, timeout=self.timeout_seconds
                     )
-                    
+
                 finally:
                     # Clean up task tracking
                     self._active_transcriptions.pop(upload_id, None)
-                    
+
                     # Clean up converted file if we created one
                     if conversion_needed and processed_audio_path != audio_file:
                         try:
                             processed_audio_path.unlink()
                             logger.info(
                                 "Cleaned up converted audio file",
-                                extra={"upload_id": upload_id, "file": str(processed_audio_path)},
+                                extra={
+                                    "upload_id": upload_id,
+                                    "file": str(processed_audio_path),
+                                },
                             )
                         except Exception as e:
                             logger.warning(
@@ -176,7 +182,9 @@ class TranscriptionService:
                 return response
 
             except asyncio.TimeoutError:
-                error_msg = f"Transcription timeout after {self.timeout_seconds} seconds"
+                error_msg = (
+                    f"Transcription timeout after {self.timeout_seconds} seconds"
+                )
                 logger.error(
                     "Transcription timeout",
                     extra={"upload_id": upload_id, "timeout": self.timeout_seconds},
@@ -214,10 +222,10 @@ class TranscriptionService:
         # Whisper doesn't provide direct confidence scores
         # We estimate based on available metrics
         segments = whisper_result.get("segments", [])
-        
+
         if not segments:
             return 0.5  # Default moderate confidence
-            
+
         # Calculate average confidence from segments if available
         confidences = []
         for segment in segments:
@@ -226,15 +234,15 @@ class TranscriptionService:
                 # Convert log probability to confidence (rough approximation)
                 conf = max(0.0, min(1.0, (segment["avg_logprob"] + 1.0)))
                 confidences.append(conf)
-        
+
         if confidences:
             return round(sum(confidences) / len(confidences), 2)
-        
+
         # Fallback: estimate based on text characteristics
         text = whisper_result.get("text", "").strip()
         if not text:
             return 0.1
-        
+
         # Simple heuristic: longer, more structured text = higher confidence
         words = text.split()
         if len(words) < 5:
@@ -253,7 +261,7 @@ class TranscriptionService:
                 "status": "processing" if not task.done() else "completed",
                 "is_done": task.done(),
             }
-        
+
         return {
             "upload_id": upload_id,
             "status": "not_found",

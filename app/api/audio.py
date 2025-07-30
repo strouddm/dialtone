@@ -37,10 +37,10 @@ router = APIRouter(prefix="/api/v1/audio", tags=["audio"])
                         "file_size": 1024576,
                         "mime_type": "audio/webm",
                         "status": "uploaded",
-                        "created_at": "2024-11-30T14:30:52.123456"
+                        "created_at": "2024-11-30T14:30:52.123456",
                     }
                 }
-            }
+            },
         },
         400: {
             "model": ErrorResponse,
@@ -53,8 +53,8 @@ router = APIRouter(prefix="/api/v1/audio", tags=["audio"])
                             "value": {
                                 "error": "No file provided",
                                 "error_code": "MISSING_FILE",
-                                "request_id": "req_123456789"
-                            }
+                                "request_id": "req_123456789",
+                            },
                         },
                         "invalid_format": {
                             "summary": "Unsupported file format",
@@ -63,13 +63,17 @@ router = APIRouter(prefix="/api/v1/audio", tags=["audio"])
                                 "error_code": "INVALID_FORMAT",
                                 "request_id": "req_123456789",
                                 "details": {
-                                    "allowed_formats": ["audio/webm", "audio/mp4", "audio/mpeg"]
-                                }
-                            }
-                        }
+                                    "allowed_formats": [
+                                        "audio/webm",
+                                        "audio/mp4",
+                                        "audio/mpeg",
+                                    ]
+                                },
+                            },
+                        },
                     }
                 }
-            }
+            },
         },
         413: {
             "model": ErrorResponse,
@@ -80,13 +84,10 @@ router = APIRouter(prefix="/api/v1/audio", tags=["audio"])
                         "error": "File size exceeds maximum allowed size of 50MB",
                         "error_code": "FILE_TOO_LARGE",
                         "request_id": "req_123456789",
-                        "details": {
-                            "max_size": 52428800,
-                            "received_size": 62914560
-                        }
+                        "details": {"max_size": 52428800, "received_size": 62914560},
                     }
                 }
-            }
+            },
         },
         422: {"model": ErrorResponse, "description": "Validation error"},
         500: {"model": ErrorResponse, "description": "Server error"},
@@ -150,13 +151,13 @@ async def upload_audio(
                             "text": "This is a test transcription of my voice note about the project meeting tomorrow.",
                             "language": "en",
                             "confidence": 0.95,
-                            "duration_seconds": 12.5
+                            "duration_seconds": 12.5,
                         },
                         "processing_time_seconds": 2.8,
-                        "status": "completed"
+                        "status": "completed",
                     }
                 }
-            }
+            },
         },
         400: {
             "model": ErrorResponse,
@@ -166,10 +167,10 @@ async def upload_audio(
                     "example": {
                         "error": "Audio conversion failed: unsupported codec",
                         "error_code": "CONVERSION_ERROR",
-                        "request_id": "req_123456789"
+                        "request_id": "req_123456789",
                     }
                 }
-            }
+            },
         },
         404: {
             "model": ErrorResponse,
@@ -179,10 +180,10 @@ async def upload_audio(
                     "example": {
                         "error": "Upload with ID 'invalid_upload_id' not found",
                         "error_code": "UPLOAD_NOT_FOUND",
-                        "request_id": "req_123456789"
+                        "request_id": "req_123456789",
                     }
                 }
-            }
+            },
         },
         408: {
             "model": ErrorResponse,
@@ -193,12 +194,10 @@ async def upload_audio(
                         "error": "Transcription exceeded timeout limit",
                         "error_code": "TRANSCRIPTION_TIMEOUT",
                         "request_id": "req_123456789",
-                        "details": {
-                            "timeout_seconds": 30
-                        }
+                        "details": {"timeout_seconds": 30},
                     }
                 }
-            }
+            },
         },
         422: {"model": ErrorResponse, "description": "Validation error"},
         500: {"model": ErrorResponse, "description": "Transcription processing error"},
@@ -210,10 +209,10 @@ async def upload_audio(
                     "example": {
                         "error": "Whisper transcription service is currently unavailable",
                         "error_code": "SERVICE_UNAVAILABLE",
-                        "request_id": "req_123456789"
+                        "request_id": "req_123456789",
                     }
                 }
-            }
+            },
         },
     },
 )

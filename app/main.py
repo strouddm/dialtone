@@ -59,8 +59,8 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         description="Self-hosted voice-to-Obsidian system with local AI processing. "
-                   "Record audio on any device, process locally with Whisper AI, "
-                   "and save organized notes directly to your Obsidian vault.",
+        "Record audio on any device, process locally with Whisper AI, "
+        "and save organized notes directly to your Obsidian vault.",
         version=__version__,
         lifespan=lifespan,
         docs_url="/docs",
@@ -75,25 +75,22 @@ def create_app() -> FastAPI:
             "url": "https://opensource.org/licenses/MIT",
         },
         servers=[
-            {
-                "url": "http://localhost:8000",
-                "description": "Development server"
-            },
+            {"url": "http://localhost:8000", "description": "Development server"},
             {
                 "url": "https://your-domain.com",
-                "description": "Production server (configure with your domain)"
-            }
+                "description": "Production server (configure with your domain)",
+            },
         ],
         openapi_tags=[
             {
                 "name": "health",
-                "description": "Health check and system monitoring endpoints"
+                "description": "Health check and system monitoring endpoints",
             },
             {
                 "name": "audio",
-                "description": "Audio upload and transcription endpoints"
-            }
-        ]
+                "description": "Audio upload and transcription endpoints",
+            },
+        ],
     )
 
     # Add CORS middleware for PWA frontend
@@ -135,18 +132,18 @@ def create_app() -> FastAPI:
                             "health": "/health",
                             "endpoints": {
                                 "upload": "/api/v1/audio/upload",
-                                "transcribe": "/api/v1/audio/transcribe"
-                            }
+                                "transcribe": "/api/v1/audio/transcribe",
+                            },
                         }
                     }
-                }
+                },
             }
-        }
+        },
     )
     async def root():
         """
         Get API information and navigation links.
-        
+
         This endpoint provides basic metadata about the API including:
         - Service name and version
         - Available documentation links
@@ -161,8 +158,8 @@ def create_app() -> FastAPI:
             "health": "/health",
             "endpoints": {
                 "upload": "/api/v1/audio/upload",
-                "transcribe": "/api/v1/audio/transcribe"
-            }
+                "transcribe": "/api/v1/audio/transcribe",
+            },
         }
 
     # Include routers

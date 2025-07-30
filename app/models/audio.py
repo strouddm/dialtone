@@ -36,7 +36,9 @@ class TranscriptionRequest(BaseModel):
     """Request model for transcription."""
 
     upload_id: str = Field(..., description="Upload ID from audio upload")
-    language: Optional[str] = Field(None, description="Expected language code (e.g., 'en', 'es')")
+    language: Optional[str] = Field(
+        None, description="Expected language code (e.g., 'en', 'es')"
+    )
 
 
 class TranscriptionData(BaseModel):
@@ -44,8 +46,12 @@ class TranscriptionData(BaseModel):
 
     text: str = Field(..., description="Transcribed text content")
     language: str = Field(..., description="Detected language code")
-    confidence: float = Field(..., description="Confidence score 0.0-1.0", ge=0.0, le=1.0)
-    duration_seconds: float = Field(..., description="Audio duration in seconds", ge=0.0)
+    confidence: float = Field(
+        ..., description="Confidence score 0.0-1.0", ge=0.0, le=1.0
+    )
+    duration_seconds: float = Field(
+        ..., description="Audio duration in seconds", ge=0.0
+    )
 
 
 class TranscriptionResponse(BaseModel):
@@ -53,7 +59,9 @@ class TranscriptionResponse(BaseModel):
 
     upload_id: str = Field(..., description="Upload ID that was transcribed")
     transcription: TranscriptionData = Field(..., description="Transcription results")
-    processing_time_seconds: float = Field(..., description="Time taken to process", ge=0.0)
+    processing_time_seconds: float = Field(
+        ..., description="Time taken to process", ge=0.0
+    )
     status: Literal["completed"] = Field("completed", description="Processing status")
 
 
@@ -63,7 +71,7 @@ class TranscriptionError(BaseModel):
     error: str = Field(..., description="Error message")
     error_code: Literal[
         "UPLOAD_NOT_FOUND",
-        "AUDIO_FILE_NOT_FOUND", 
+        "AUDIO_FILE_NOT_FOUND",
         "CONVERSION_ERROR",
         "TRANSCRIPTION_ERROR",
         "TRANSCRIPTION_TIMEOUT",
@@ -71,4 +79,6 @@ class TranscriptionError(BaseModel):
         "PROCESSING_ERROR",
         "INVALID_AUDIO",
     ] = Field(..., description="Machine-readable error code")
-    timeout_seconds: Optional[int] = Field(None, description="Timeout value if applicable")
+    timeout_seconds: Optional[int] = Field(
+        None, description="Timeout value if applicable"
+    )

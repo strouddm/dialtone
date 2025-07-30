@@ -312,9 +312,7 @@ class TestTranscribeEndpoint:
         assert data["processing_time_seconds"] == 12.3
         assert data["status"] == "completed"
 
-        mock_transcribe.assert_called_once_with(
-            upload_id="test-123-456", language=None
-        )
+        mock_transcribe.assert_called_once_with(upload_id="test-123-456", language=None)
 
     @patch("app.services.transcription.transcription_service.transcribe_upload")
     def test_transcribe_with_language(self, mock_transcribe, client):
@@ -338,9 +336,7 @@ class TestTranscribeEndpoint:
         data = response.json()
         assert data["transcription"]["language"] == "es"
 
-        mock_transcribe.assert_called_once_with(
-            upload_id="test-123", language="es"
-        )
+        mock_transcribe.assert_called_once_with(upload_id="test-123", language="es")
 
     def test_transcribe_missing_upload_id(self, client):
         """Test transcription without upload_id."""
@@ -362,13 +358,13 @@ class TestTranscribeEndpoint:
     def test_transcribe_upload_not_found(self, mock_transcribe, client):
         """Test transcription with non-existent upload."""
         from fastapi import HTTPException
-        
+
         mock_transcribe.side_effect = HTTPException(
             status_code=404,
             detail={
                 "error": "Upload nonexistent not found",
                 "error_code": "UPLOAD_NOT_FOUND",
-            }
+            },
         )
 
         request_data = {"upload_id": "nonexistent"}
@@ -382,14 +378,14 @@ class TestTranscribeEndpoint:
     def test_transcribe_timeout(self, mock_transcribe, client):
         """Test transcription timeout."""
         from fastapi import HTTPException
-        
+
         mock_transcribe.side_effect = HTTPException(
             status_code=408,
             detail={
                 "error": "Transcription timeout after 300 seconds",
                 "error_code": "TRANSCRIPTION_TIMEOUT",
                 "timeout_seconds": 300,
-            }
+            },
         )
 
         request_data = {"upload_id": "timeout-test"}
@@ -404,14 +400,14 @@ class TestTranscribeEndpoint:
     def test_transcribe_conversion_error(self, mock_transcribe, client):
         """Test transcription with audio conversion error."""
         from fastapi import HTTPException
-        
+
         mock_transcribe.side_effect = HTTPException(
             status_code=400,
             detail={
                 "error": "Audio conversion failed",
                 "error_code": "CONVERSION_ERROR",
                 "details": "FFmpeg conversion failed",
-            }
+            },
         )
 
         request_data = {"upload_id": "bad-audio"}
@@ -425,13 +421,13 @@ class TestTranscribeEndpoint:
     def test_transcribe_service_unavailable(self, mock_transcribe, client):
         """Test transcription when service is unavailable."""
         from fastapi import HTTPException
-        
+
         mock_transcribe.side_effect = HTTPException(
             status_code=503,
             detail={
                 "error": "Transcription service unavailable",
                 "error_code": "SERVICE_UNAVAILABLE",
-            }
+            },
         )
 
         request_data = {"upload_id": "service-down"}
@@ -481,14 +477,14 @@ class TestTranscribeEndpoint:
         """Test that transcribe endpoint is documented in OpenAPI."""
         response = client.get("/openapi.json")
         assert response.status_code == 200
-        
+
         openapi_spec = response.json()
         paths = openapi_spec.get("paths", {})
         transcribe_path = paths.get("/api/v1/audio/transcribe", {})
-        
+
         # Check that POST method exists
         assert "post" in transcribe_path
-        
+
         # Check response schemas are defined
         post_spec = transcribe_path["post"]
         assert "responses" in post_spec

@@ -126,7 +126,7 @@ class WhisperModelManager:
             raise WhisperError(
                 error_msg,
                 error_code="MODEL_LOAD_ERROR",
-                details={"model_size": self._model_size, "device": self._device}
+                details={"model_size": self._model_size, "device": self._device},
             ) from e
 
         finally:
@@ -143,7 +143,7 @@ class WhisperModelManager:
             raise WhisperError(
                 "Whisper model not loaded",
                 error_code="MODEL_NOT_LOADED",
-                details={"loading": self.is_loading, "load_error": self.load_error}
+                details={"loading": self.is_loading, "load_error": self.load_error},
             )
 
         try:
@@ -201,7 +201,7 @@ class WhisperModelManager:
             raise WhisperError(
                 error_msg,
                 error_code="TRANSCRIPTION_ERROR",
-                details={"audio_path": audio_path}
+                details={"audio_path": audio_path},
             ) from e
 
     def get_model_info(self) -> Dict[str, Any]:
