@@ -2,7 +2,6 @@
 
 from datetime import datetime
 
-
 from app.core.health.models import (
     HealthCheck,
     HealthResponse,
