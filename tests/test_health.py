@@ -1,13 +1,13 @@
 """Tests for health endpoints."""
 
+from unittest.mock import Mock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, Mock
 
-from app.main import app
 from app import __version__
-from app.core.health.models import HealthStatus, SystemMetrics, HealthCheck
-
+from app.core.health.models import HealthCheck, HealthStatus, SystemMetrics
+from app.main import app
 
 client = TestClient(app)
 

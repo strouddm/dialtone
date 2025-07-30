@@ -1,8 +1,9 @@
 """Tests for audio converter service."""
 
-import pytest
-from unittest.mock import patch, Mock
 from pathlib import Path
+from unittest.mock import Mock, patch
+
+import pytest
 from fastapi import HTTPException
 
 from app.services.audio_converter import AudioConverter, audio_converter

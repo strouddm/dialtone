@@ -1,8 +1,9 @@
 """Tests for Whisper model management service."""
 
-import pytest
-from unittest.mock import AsyncMock, Mock, patch
 from pathlib import Path
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 from app.services.whisper_model import WhisperModelManager, whisper_manager
 

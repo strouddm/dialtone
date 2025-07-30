@@ -5,11 +5,7 @@ from typing import Union
 
 from fastapi import APIRouter, File, Request, UploadFile, status
 
-from app.models.audio import (
-    TranscriptionRequest,
-    TranscriptionResponse,
-    UploadResponse,
-)
+from app.models.audio import TranscriptionRequest, TranscriptionResponse, UploadResponse
 from app.models.common import ErrorResponse
 from app.services.transcription import transcription_service
 from app.services.upload import upload_service

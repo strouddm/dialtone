@@ -1,9 +1,10 @@
 """Tests for transcription orchestration service."""
 
-import pytest
 import asyncio
-from unittest.mock import AsyncMock, Mock, patch
 from pathlib import Path
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 from fastapi import HTTPException
 
 from app.services.transcription import TranscriptionService, transcription_service

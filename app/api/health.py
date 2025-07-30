@@ -1,14 +1,13 @@
 """Health check endpoint."""
 
 import time
-from typing import Dict, Any
+from typing import Any, Dict
 
 from fastapi import APIRouter, status
 
 from app import __version__
 from app.core.health import HealthResponse, HealthService
 from app.core.settings import settings
-
 
 router = APIRouter(tags=["health"])
 health_service = HealthService()

@@ -3,7 +3,7 @@
 import logging
 import time
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Dict, Any
+from typing import Any, AsyncGenerator, Dict
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -23,7 +23,6 @@ from app.core.handlers import (
 )
 from app.core.middleware import LoggingMiddleware, RequestIDMiddleware
 from app.core.settings import settings
-
 
 logger = logging.getLogger(__name__)
 

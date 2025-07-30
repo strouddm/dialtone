@@ -1,11 +1,11 @@
 """Health monitoring module."""
 
 from .models import (
+    HealthCheck,
     HealthResponse,
     HealthStatus,
-    SystemMetrics,
     ServiceStatus,
-    HealthCheck,
+    SystemMetrics,
 )
 from .service import HealthService
 
