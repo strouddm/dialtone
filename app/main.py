@@ -58,12 +58,42 @@ def create_app() -> FastAPI:
     # Create FastAPI app
     app = FastAPI(
         title=settings.app_name,
-        description="Self-hosted voice-to-Obsidian system with local AI processing",
+        description="Self-hosted voice-to-Obsidian system with local AI processing. "
+                   "Record audio on any device, process locally with Whisper AI, "
+                   "and save organized notes directly to your Obsidian vault.",
         version=__version__,
         lifespan=lifespan,
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
+        contact={
+            "name": "Dialtone API Support",
+            "url": "https://github.com/strouddm/dialtone",
+        },
+        license_info={
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT",
+        },
+        servers=[
+            {
+                "url": "http://localhost:8000",
+                "description": "Development server"
+            },
+            {
+                "url": "https://your-domain.com",
+                "description": "Production server (configure with your domain)"
+            }
+        ],
+        openapi_tags=[
+            {
+                "name": "health",
+                "description": "Health check and system monitoring endpoints"
+            },
+            {
+                "name": "audio",
+                "description": "Audio upload and transcription endpoints"
+            }
+        ]
     )
 
     # Add CORS middleware for PWA frontend
@@ -86,15 +116,53 @@ def create_app() -> FastAPI:
     app.add_exception_handler(Exception, general_exception_handler)
 
     # Root endpoint
-    @app.get("/", response_model=Dict[str, Any])
+    @app.get(
+        "/",
+        response_model=Dict[str, Any],
+        summary="API Information",
+        description="Get basic information about the Dialtone API, including version and available endpoints",
+        response_description="API metadata and navigation links",
+        responses={
+            200: {
+                "description": "API information retrieved successfully",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "name": "Dialtone Voice Notes API",
+                            "version": "0.1.0",
+                            "description": "Voice to Obsidian API",
+                            "docs": "/docs",
+                            "health": "/health",
+                            "endpoints": {
+                                "upload": "/api/v1/audio/upload",
+                                "transcribe": "/api/v1/audio/transcribe"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
     async def root():
-        """Root endpoint with API information."""
+        """
+        Get API information and navigation links.
+        
+        This endpoint provides basic metadata about the API including:
+        - Service name and version
+        - Available documentation links
+        - Key endpoint paths
+        - Health check location
+        """
         return {
             "name": settings.app_name,
             "version": __version__,
             "description": "Voice to Obsidian API",
             "docs": "/docs",
             "health": "/health",
+            "endpoints": {
+                "upload": "/api/v1/audio/upload",
+                "transcribe": "/api/v1/audio/transcribe"
+            }
         }
 
     # Include routers
