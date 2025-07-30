@@ -83,39 +83,48 @@ class TestUploadService:
     async def test_validate_file_success(self, upload_service, mock_upload_file):
         """Test successful file validation."""
         # Should not raise exception
-        await upload_service.validate_file(mock_upload_file)
+        try:
+            await upload_service.validate_file(mock_upload_file)
+        except Exception:
+            pytest.fail("validate_file should not raise exception for valid file")
 
     @pytest.mark.asyncio
     async def test_validate_file_no_filename(self, upload_service):
         """Test validation with missing filename."""
+        from app.core.exceptions import ValidationError
+        
         file = Mock(spec=UploadFile)
         file.filename = None
+        file.content_type = "audio/webm"
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(ValidationError) as exc_info:
             await upload_service.validate_file(file)
 
-        assert exc_info.value.status_code == 400
-        assert "MISSING_FILE" in str(exc_info.value.detail)
+        assert "File has no filename" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_validate_file_too_large(self, upload_service, large_mock_file):
         """Test validation with file too large."""
-        with pytest.raises(HTTPException) as exc_info:
+        from app.core.exceptions import FileSizeError
+        
+        with pytest.raises(FileSizeError) as exc_info:
             await upload_service.validate_file(large_mock_file)
 
-        assert exc_info.value.status_code == 413
-        assert "FILE_TOO_LARGE" in str(exc_info.value.detail)
+        assert exc_info.value.file_size == 104857600
+        assert exc_info.value.max_size == 52428800
 
     @pytest.mark.asyncio
     async def test_validate_file_invalid_format(
         self, upload_service, invalid_format_file
     ):
         """Test validation with invalid format."""
-        with pytest.raises(HTTPException) as exc_info:
+        from app.core.exceptions import UnsupportedFormatError
+        
+        with pytest.raises(UnsupportedFormatError) as exc_info:
             await upload_service.validate_file(invalid_format_file)
 
-        assert exc_info.value.status_code == 400
-        assert "INVALID_FORMAT" in str(exc_info.value.detail)
+        assert "text/plain" in str(exc_info.value)
+        assert "not supported" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_save_file_success(self, upload_service, mock_upload_file, tmp_path):
@@ -156,10 +165,13 @@ class TestUploadService:
             side_effect=[b"x" * 15, b""]
         )  # 15 bytes exceeds 10 byte limit
 
-        with pytest.raises(HTTPException) as exc_info:
+        from app.core.exceptions import FileSizeError
+        
+        with pytest.raises(FileSizeError) as exc_info:
             await upload_service.save_file(file, "test-id")
 
-        assert exc_info.value.status_code == 413
+        assert exc_info.value.file_size == 15
+        assert exc_info.value.max_size == 10
 
     @pytest.mark.asyncio
     async def test_process_upload_success(
@@ -169,25 +181,28 @@ class TestUploadService:
         upload_service.upload_dir = tmp_path
         mock_upload_file.read = AsyncMock(side_effect=[b"test audio data", b""])
 
-        result = await upload_service.process_upload(mock_upload_file)
+        try:
+            result = await upload_service.process_upload(mock_upload_file)
 
-        assert "upload_id" in result
-        assert "filename" in result
-        assert "file_size" in result
-        assert "mime_type" in result
-        assert "status" in result
-        assert "created_at" in result
+            assert "upload_id" in result
+            assert "filename" in result
+            assert "file_size" in result
+            assert "mime_type" in result
+            assert "status" in result
+            assert "created_at" in result
 
-        assert result["status"] == "uploaded"
-        assert result["mime_type"] == "audio/webm"
-        assert result["file_size"] == 15  # Length of "test audio data"
+            assert result["status"] == "uploaded"
+            assert result["mime_type"] == "audio/webm"
+            assert result["file_size"] == 15  # Length of "test audio data"
+        except Exception as e:
+            pytest.fail(f"process_upload raised unexpected exception: {e}")
 
     @pytest.mark.asyncio
     async def test_process_upload_validation_failure(
         self, upload_service, invalid_format_file
     ):
         """Test upload process with validation failure."""
-        with pytest.raises(HTTPException) as exc_info:
+        from app.core.exceptions import UnsupportedFormatError
+        
+        with pytest.raises(UnsupportedFormatError):
             await upload_service.process_upload(invalid_format_file)
-
-        assert exc_info.value.status_code == 400

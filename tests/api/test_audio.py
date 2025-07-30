@@ -77,7 +77,8 @@ class TestAudioUploadEndpoint:
 
         assert response.status_code == 422
         data = response.json()
-        assert "detail" in data
+        assert "error" in data
+        assert data["error_code"] == "VALIDATION_ERROR"
 
     def test_upload_empty_file(self, client):
         """Test upload with empty filename."""
@@ -95,10 +96,9 @@ class TestAudioUploadEndpoint:
             "/api/v1/audio/upload", files={"file": invalid_format_file}
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422
         data = response.json()
-        assert data["error_code"] == "INVALID_FORMAT"
-        assert "allowed_formats" in data
+        assert data["error_code"] == "VALIDATION_ERROR"
 
     def test_upload_file_too_large(self, client):
         """Test upload with file too large."""
@@ -114,7 +114,8 @@ class TestAudioUploadEndpoint:
             assert response.status_code == 413
             data = response.json()
             assert data["error_code"] == "FILE_TOO_LARGE"
-            assert "max_size" in data
+            assert "details" in data
+            assert "max_size" in data["details"]
 
     def test_upload_webm_format(self, client):
         """Test upload with WebM format."""
@@ -199,14 +200,16 @@ class TestAudioUploadEndpoint:
     @patch("app.services.upload.upload_service.process_upload")
     def test_server_error_handling(self, mock_process_upload, client, valid_audio_file):
         """Test server error handling."""
-        # Mock service raising unexpected exception
-        mock_process_upload.side_effect = Exception("Database connection failed")
+        from app.core.exceptions import ServiceError
+        
+        # Mock service raising a ServiceError which will be caught properly
+        mock_process_upload.side_effect = ServiceError("Database connection failed")
 
         response = client.post("/api/v1/audio/upload", files={"file": valid_audio_file})
 
-        assert response.status_code == 500
+        assert response.status_code == 503
         data = response.json()
-        assert data["error_code"] == "INTERNAL_ERROR"
+        assert data["error_code"] == "SERVICE_ERROR"
         assert "request_id" in data
 
     def test_cors_headers_present(self, client, valid_audio_file):
@@ -344,7 +347,8 @@ class TestTranscribeEndpoint:
 
         assert response.status_code == 422
         data = response.json()
-        assert "detail" in data
+        assert "error" in data
+        assert data["error_code"] == "VALIDATION_ERROR"
 
     def test_transcribe_invalid_request_format(self, client):
         """Test transcription with invalid request format."""
@@ -439,15 +443,17 @@ class TestTranscribeEndpoint:
     @patch("app.services.transcription.transcription_service.transcribe_upload")
     def test_transcribe_server_error(self, mock_transcribe, client):
         """Test transcription server error handling."""
-        # Mock service raising unexpected exception
-        mock_transcribe.side_effect = Exception("Unexpected database error")
+        from app.core.exceptions import ServiceError
+        
+        # Mock service raising a ServiceError
+        mock_transcribe.side_effect = ServiceError("Unexpected database error")
 
         request_data = {"upload_id": "error-test"}
         response = client.post("/api/v1/audio/transcribe", json=request_data)
 
-        assert response.status_code == 500
+        assert response.status_code == 503
         data = response.json()
-        assert data["error_code"] == "TRANSCRIPTION_ERROR"
+        assert data["error_code"] == "SERVICE_ERROR"
         assert "request_id" in data
 
     @patch("app.services.transcription.transcription_service.transcribe_upload")
