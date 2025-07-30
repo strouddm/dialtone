@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional
 import whisper
 from whisper import Whisper
 
-from app.core.exceptions import ResourceExhaustedError, ServiceError, WhisperError
+from app.core.exceptions import ResourceExhaustedError, WhisperError
 from app.core.settings import settings
 
 logger = logging.getLogger(__name__)

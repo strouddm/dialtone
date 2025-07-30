@@ -1,7 +1,6 @@
 """Audio upload API endpoints."""
 
 import logging
-from typing import Union
 
 from fastapi import APIRouter, File, Request, UploadFile, status
 
@@ -55,7 +54,8 @@ router = APIRouter(prefix="/api/v1/audio", tags=["audio"])
                         "invalid_format": {
                             "summary": "Unsupported file format",
                             "value": {
-                                "error": "Unsupported file format. Only WebM, M4A, and MP3 are allowed",
+                                "error": "Unsupported file format. "
+                                "Only WebM, M4A, and MP3 are allowed",
                                 "error_code": "INVALID_FORMAT",
                                 "request_id": "req_123456789",
                                 "details": {

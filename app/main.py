@@ -1,14 +1,12 @@
 """Main FastAPI application."""
 
 import logging
-import time
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Dict
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import __version__
@@ -106,9 +104,15 @@ def create_app() -> FastAPI:
     app.add_middleware(LoggingMiddleware)
 
     # Register exception handlers
-    app.add_exception_handler(VoiceNotesError, voice_notes_error_handler)  # type: ignore[arg-type]
-    app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]
-    app.add_exception_handler(StarletteHTTPException, http_exception_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(
+        VoiceNotesError, voice_notes_error_handler  # type: ignore[arg-type]
+    )
+    app.add_exception_handler(
+        RequestValidationError, validation_error_handler  # type: ignore[arg-type]
+    )
+    app.add_exception_handler(
+        StarletteHTTPException, http_exception_handler  # type: ignore[arg-type]
+    )
     app.add_exception_handler(Exception, general_exception_handler)
 
     # Root endpoint
@@ -116,7 +120,8 @@ def create_app() -> FastAPI:
         "/",
         response_model=Dict[str, Any],
         summary="API Information",
-        description="Get basic information about the Dialtone API, including version and available endpoints",
+        description="Get basic information about the Dialtone API, "
+        "including version and available endpoints",
         response_description="API metadata and navigation links",
         responses={
             200: {

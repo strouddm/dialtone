@@ -1,12 +1,9 @@
 """Tests for validators."""
 import pytest
-from fastapi import UploadFile
 
 from app.core.exceptions import FileSizeError, UnsupportedFormatError, ValidationError
 from app.core.validators import (
     MAX_FILE_SIZE,
-    SUPPORTED_AUDIO_FORMATS,
-    SUPPORTED_EXTENSIONS,
     validate_audio_file,
     validate_content_type,
     validate_file_size_async,

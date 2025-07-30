@@ -1,11 +1,9 @@
 """Health check endpoint."""
 
-import time
-from typing import Any, Dict
+from typing import Dict
 
 from fastapi import APIRouter, status
 
-from app import __version__
 from app.core.health import HealthResponse, HealthService
 from app.core.settings import settings
 

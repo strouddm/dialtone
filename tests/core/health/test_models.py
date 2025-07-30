@@ -2,7 +2,6 @@
 
 from datetime import datetime
 
-import pytest
 
 from app.core.health.models import (
     HealthCheck,

@@ -1,7 +1,6 @@
 """Audio converter service for format conversion using ffmpeg."""
 
 import logging
-import tempfile
 from pathlib import Path
 from typing import Tuple
 

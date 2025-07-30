@@ -1,7 +1,5 @@
 """Exception handlers for FastAPI application."""
 import logging
-import traceback
-from typing import Any
 
 from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
@@ -11,7 +9,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.exceptions import (
     RateLimitError,
     ServiceError,
-    ValidationError,
     VoiceNotesError,
 )
 from app.models.common import ErrorResponse

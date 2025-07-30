@@ -1,11 +1,9 @@
 """Tests for audio upload API endpoints."""
 
 from io import BytesIO
-from pathlib import Path
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
-from fastapi import status
 from fastapi.testclient import TestClient
 
 from app.main import app

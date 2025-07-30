@@ -1,8 +1,6 @@
 """Tests for custom exceptions."""
-import pytest
 
 from app.core.exceptions import (
-    AudioProcessingError,
     FileSizeError,
     RateLimitError,
     ResourceExhaustedError,
