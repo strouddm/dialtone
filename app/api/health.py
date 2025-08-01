@@ -112,15 +112,16 @@ health_service = HealthService()
 async def health_check() -> HealthResponse:
     """Return comprehensive health status with system monitoring."""
     import asyncio
-    
+
     try:
         # Add timeout to prevent hanging health checks
         return await asyncio.wait_for(health_service.get_health_status(), timeout=2.0)
     except asyncio.TimeoutError:
         # Return degraded status on timeout
-        from app.core.health.models import HealthResponse, SystemMetrics
         import time
         from datetime import datetime, timezone
+
+        from app.core.health.models import HealthResponse, SystemMetrics
 
         return HealthResponse(
             status="degraded",
