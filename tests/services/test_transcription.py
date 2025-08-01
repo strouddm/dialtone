@@ -223,7 +223,7 @@ class TestTranscriptionService:
         }
 
         confidence = service._calculate_confidence(whisper_result)
-        assert confidence == 0.8  # For longer text
+        assert confidence == 0.7  # For text with 5-20 words (has 9 words)
 
     def test_calculate_confidence_short_text(self):
         """Test confidence calculation for short text."""
@@ -232,7 +232,7 @@ class TestTranscriptionService:
         whisper_result = {"text": "Short", "segments": []}
 
         confidence = service._calculate_confidence(whisper_result)
-        assert confidence == 0.6  # For short text
+        assert confidence == 0.6  # For text with less than 5 words (has 1 word)
 
     def test_calculate_confidence_empty_text(self):
         """Test confidence calculation for empty text."""
@@ -241,7 +241,7 @@ class TestTranscriptionService:
         whisper_result = {"text": "", "segments": []}
 
         confidence = service._calculate_confidence(whisper_result)
-        assert confidence == 0.1  # Very low confidence for empty
+        assert confidence == 0.1  # Very low confidence for empty text
 
     async def test_get_transcription_status_active(self):
         """Test getting status of active transcription."""
