@@ -1,7 +1,7 @@
 """Audio upload and transcription models."""
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -39,6 +39,12 @@ class TranscriptionRequest(BaseModel):
     language: Optional[str] = Field(
         None, description="Expected language code (e.g., 'en', 'es')"
     )
+    include_summary: bool = Field(
+        False, description="Whether to include AI-generated summary"
+    )
+    max_summary_words: Optional[int] = Field(
+        default=150, ge=50, le=300, description="Maximum words in summary (50-300)"
+    )
 
 
 class TranscriptionData(BaseModel):
@@ -59,6 +65,18 @@ class TranscriptionResponse(BaseModel):
 
     upload_id: str = Field(..., description="Upload ID that was transcribed")
     transcription: TranscriptionData = Field(..., description="Transcription results")
+    summary: Optional[str] = Field(
+        None, description="AI-generated summary (if requested)"
+    )
+    summary_processing_time: Optional[float] = Field(
+        None, description="Time taken for summarization in seconds", ge=0.0
+    )
+    keywords: Optional[List[str]] = Field(
+        None, description="Extracted keywords from transcription"
+    )
+    keyword_processing_time: Optional[float] = Field(
+        None, description="Time taken for keyword extraction in seconds", ge=0.0
+    )
     processing_time_seconds: float = Field(
         ..., description="Time taken to process", ge=0.0
     )

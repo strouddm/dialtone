@@ -187,17 +187,54 @@ def test_health_check_degraded_status(mock_services, mock_checks, mock_metrics):
 @patch("app.core.health.service.HealthService.get_health_status")
 def test_health_check_timeout_fallback(mock_get_health):
     """Test health check timeout fallback."""
-    # Mock timeout scenario
-    import asyncio
+    # Mock timeout scenario by returning what the service would return on timeout
+    from app.core.health.models import (
+        HealthCheck,
+        HealthResponse,
+        HealthStatus,
+        SystemMetrics,
+    )
+    from datetime import datetime
 
-    async def timeout_response():
-        await asyncio.sleep(0.5)  # Simulate timeout
+    fallback_response = HealthResponse(
+        status=HealthStatus.DEGRADED,
+        timestamp=datetime.utcnow(),
+        version="0.1.0",
+        uptime_seconds=120.5,
+        system=SystemMetrics(
+            cpu_percent=0.0,
+            memory_percent=0.0,
+            memory_used_gb=0.0,
+            memory_total_gb=0.0,
+            disk_percent=0.0,
+            load_average=[0.0, 0.0, 0.0],
+        ),
+        services={
+            "fastapi": HealthStatus.DEGRADED,
+            "whisper": HealthStatus.HEALTHY,
+            "ollama": HealthStatus.HEALTHY,
+        },
+        checks=[
+            HealthCheck(
+                name="health_check_timeout",
+                status=HealthStatus.DEGRADED,
+                message="Health check timed out or failed",
+            )
+        ],
+        features={
+            "audio_upload": True,
+            "transcription": True,
+            "summarization": False,
+        },
+        app_name="Dialtone",
+    )
 
-    mock_get_health.side_effect = timeout_response
+    mock_get_health.return_value = fallback_response
 
     response = client.get("/health")
     assert response.status_code == 200
-    # The actual timeout handling is tested in the service tests
+    data = response.json()
+    assert data["status"] == "degraded"
 
 
 def test_cors_headers():

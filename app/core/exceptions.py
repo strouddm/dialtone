@@ -99,3 +99,13 @@ class RateLimitError(VoiceNotesError):
         message = f"Rate limit exceeded. Retry after {retry_after} seconds"
         details = {"retry_after": retry_after}
         super().__init__(message, 429, "RATE_LIMITED", details)
+
+
+class ServiceUnavailableError(ServiceError):
+    """Error when a required service is unavailable."""
+
+    def __init__(self, message: str, service: Optional[str] = None) -> None:
+        """Initialize with service information."""
+        details = {"service": service} if service else {}
+        super().__init__(message, "SERVICE_UNAVAILABLE", details)
+        self.status_code = 503

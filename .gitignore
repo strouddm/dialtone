@@ -37,6 +37,7 @@ logs/
 obsidian-vault/
 audio_uploads/
 temp/
+ollama-models/
 
 # Claude Dev Workflow - ignore working files, keep context
 workflow/logs/
