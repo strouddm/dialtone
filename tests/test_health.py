@@ -188,9 +188,14 @@ def test_health_check_degraded_status(mock_services, mock_checks, mock_metrics):
 def test_health_check_timeout_fallback(mock_get_health):
     """Test health check timeout fallback."""
     # Mock timeout scenario by returning what the service would return on timeout
-    from app.core.health.models import HealthCheck, HealthResponse, HealthStatus, SystemMetrics
+    from app.core.health.models import (
+        HealthCheck,
+        HealthResponse,
+        HealthStatus,
+        SystemMetrics,
+    )
     from datetime import datetime
-    
+
     fallback_response = HealthResponse(
         status=HealthStatus.DEGRADED,
         timestamp=datetime.utcnow(),
@@ -223,7 +228,7 @@ def test_health_check_timeout_fallback(mock_get_health):
         },
         app_name="Dialtone",
     )
-    
+
     mock_get_health.return_value = fallback_response
 
     response = client.get("/health")
