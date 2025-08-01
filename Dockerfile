@@ -43,6 +43,9 @@ COPY --chown=appuser:appuser ./app /app/app
 # Switch to non-root user
 USER appuser
 
+# Pre-download Whisper base model to optimize startup time
+RUN python -c "import whisper; whisper.load_model('base')"
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
