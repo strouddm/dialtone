@@ -100,7 +100,14 @@ async def http_exception_handler(
 
     # Use status code reason phrase if no detail provided
     if exc.detail:
-        error_message = exc.detail
+        # Handle case where exc.detail might be a dict or other non-string type
+        if isinstance(exc.detail, str):
+            error_message = exc.detail
+        elif isinstance(exc.detail, dict):
+            # Extract error message from dict or use a generic message
+            error_message = exc.detail.get("error", str(exc.detail))
+        else:
+            error_message = str(exc.detail)
     else:
         from http import HTTPStatus
 
@@ -109,11 +116,16 @@ async def http_exception_handler(
         except ValueError:
             error_message = "HTTP error occurred"
 
+    # If exc.detail was a dict, include it in details for context
+    details = None
+    if isinstance(exc.detail, dict):
+        details = exc.detail
+
     error_response = ErrorResponse(
         error=error_message,
         error_code=f"HTTP_{exc.status_code}",
         request_id=request_id,
-        details=None,
+        details=details,
     )
 
     logger.warning(

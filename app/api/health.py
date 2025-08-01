@@ -5,7 +5,6 @@ from typing import Dict
 from fastapi import APIRouter, status
 
 from app.core.health import HealthResponse, HealthService
-from app.core.health.models import HealthStatus
 from app.core.settings import settings
 
 router = APIRouter(tags=["health"])
