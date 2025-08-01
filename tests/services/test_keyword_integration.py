@@ -16,9 +16,7 @@ class TestKeywordIntegration:
         return {
             "text": "This is a test transcription about project management and team collaboration.",
             "language": "en",
-            "segments": [
-                {"avg_logprob": -0.2, "text": "This is a test transcription"}
-            ],
+            "segments": [{"avg_logprob": -0.2, "text": "This is a test transcription"}],
         }
 
     @pytest.fixture
@@ -28,18 +26,20 @@ class TestKeywordIntegration:
 
     @patch("app.services.transcription.settings")
     @pytest.mark.asyncio
-    async def test_keyword_extraction_enabled(self, mock_settings, mock_transcription_result, mock_keywords, tmp_path):
+    async def test_keyword_extraction_enabled(
+        self, mock_settings, mock_transcription_result, mock_keywords, tmp_path
+    ):
         """Test keyword extraction when enabled."""
         # Setup mock file system
         upload_dir = tmp_path / "test_upload"
         upload_dir.mkdir()
         audio_file = upload_dir / "test.webm"
         audio_file.write_text("mock audio content")
-        
+
         mock_settings.upload_dir = tmp_path
         mock_settings.keyword_extraction_enabled = True
         mock_settings.keyword_max_count = 5
-        
+
         with patch.multiple(
             "app.services.transcription",
             whisper_manager=Mock(
@@ -79,17 +79,19 @@ class TestKeywordIntegration:
 
     @patch("app.services.transcription.settings")
     @pytest.mark.asyncio
-    async def test_keyword_extraction_disabled(self, mock_settings, mock_transcription_result, tmp_path):
+    async def test_keyword_extraction_disabled(
+        self, mock_settings, mock_transcription_result, tmp_path
+    ):
         """Test transcription when keyword extraction is disabled."""
         # Setup mock file system
         upload_dir = tmp_path / "test_upload"
         upload_dir.mkdir()
         audio_file = upload_dir / "test.webm"
         audio_file.write_text("mock audio content")
-        
+
         mock_settings.upload_dir = tmp_path
         mock_settings.keyword_extraction_enabled = False
-        
+
         with patch.multiple(
             "app.services.transcription",
             whisper_manager=Mock(
