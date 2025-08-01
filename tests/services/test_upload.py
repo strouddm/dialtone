@@ -92,7 +92,7 @@ class TestUploadService:
     async def test_validate_file_no_filename(self, upload_service):
         """Test validation with missing filename."""
         from app.core.exceptions import ValidationError
-        
+
         file = Mock(spec=UploadFile)
         file.filename = None
         file.content_type = "audio/webm"
@@ -106,7 +106,7 @@ class TestUploadService:
     async def test_validate_file_too_large(self, upload_service, large_mock_file):
         """Test validation with file too large."""
         from app.core.exceptions import FileSizeError
-        
+
         with pytest.raises(FileSizeError) as exc_info:
             await upload_service.validate_file(large_mock_file)
 
@@ -119,7 +119,7 @@ class TestUploadService:
     ):
         """Test validation with invalid format."""
         from app.core.exceptions import UnsupportedFormatError
-        
+
         with pytest.raises(UnsupportedFormatError) as exc_info:
             await upload_service.validate_file(invalid_format_file)
 
@@ -166,7 +166,7 @@ class TestUploadService:
         )  # 15 bytes exceeds 10 byte limit
 
         from app.core.exceptions import FileSizeError
-        
+
         with pytest.raises(FileSizeError) as exc_info:
             await upload_service.save_file(file, "test-id")
 

@@ -121,27 +121,21 @@ async def health_check() -> HealthResponse:
         from app.core.health.models import HealthResponse, SystemMetrics
         import time
         from datetime import datetime, timezone
-        
+
         return HealthResponse(
             status="degraded",
             timestamp=datetime.now(timezone.utc).isoformat(),
             version=settings.app_version,
             uptime_seconds=time.time() - health_service.start_time,
-            system=SystemMetrics(
-                error="Timeout retrieving system metrics"
-            ),
-            services={
-                "whisper": "unknown", 
-                "vault": "unknown",
-                "storage": "unknown"
-            },
+            system=SystemMetrics(error="Timeout retrieving system metrics"),
+            services={"whisper": "unknown", "vault": "unknown", "storage": "unknown"},
             checks=[],
             features={
                 "audio_upload": True,
-                "transcription": False, 
-                "vault_integration": False
+                "transcription": False,
+                "vault_integration": False,
             },
-            app_name=settings.app_name
+            app_name=settings.app_name,
         )
 
 
