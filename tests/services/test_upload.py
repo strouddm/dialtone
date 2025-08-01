@@ -203,6 +203,6 @@ class TestUploadService:
     ):
         """Test upload process with validation failure."""
         from app.core.exceptions import UnsupportedFormatError
-        
+
         with pytest.raises(UnsupportedFormatError):
             await upload_service.process_upload(invalid_format_file)

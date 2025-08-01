@@ -201,7 +201,7 @@ class TestAudioUploadEndpoint:
     def test_server_error_handling(self, mock_process_upload, client, valid_audio_file):
         """Test server error handling."""
         from app.core.exceptions import ServiceError
-        
+
         # Mock service raising a ServiceError which will be caught properly
         mock_process_upload.side_effect = ServiceError("Database connection failed")
 
@@ -444,7 +444,7 @@ class TestTranscribeEndpoint:
     def test_transcribe_server_error(self, mock_transcribe, client):
         """Test transcription server error handling."""
         from app.core.exceptions import ServiceError
-        
+
         # Mock service raising a ServiceError
         mock_transcribe.side_effect = ServiceError("Unexpected database error")
 
