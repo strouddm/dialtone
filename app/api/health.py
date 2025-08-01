@@ -111,33 +111,7 @@ health_service = HealthService()
 )
 async def health_check() -> HealthResponse:
     """Return comprehensive health status with system monitoring."""
-    import asyncio
-
-    try:
-        # Add timeout to prevent hanging health checks
-        return await asyncio.wait_for(health_service.get_health_status(), timeout=2.0)
-    except asyncio.TimeoutError:
-        # Return degraded status on timeout
-        import time
-        from datetime import datetime, timezone
-
-        from app.core.health.models import HealthResponse, SystemMetrics
-
-        return HealthResponse(
-            status="degraded",
-            timestamp=datetime.now(timezone.utc).isoformat(),
-            version=settings.app_version,
-            uptime_seconds=time.time() - health_service.start_time,
-            system=SystemMetrics(error="Timeout retrieving system metrics"),
-            services={"whisper": "unknown", "vault": "unknown", "storage": "unknown"},
-            checks=[],
-            features={
-                "audio_upload": True,
-                "transcription": False,
-                "vault_integration": False,
-            },
-            app_name=settings.app_name,
-        )
+    return await health_service.get_health_status()
 
 
 @router.get(

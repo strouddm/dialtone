@@ -1,308 +1,180 @@
-# Claude Dev Workflow
+# CLAUDE.md
 
-This file contains custom slash commands for an AI-powered development workflow with three specialized agents.
-
-## Workflow Commands
-
-### /init
-Initialize the Claude Dev Workflow structure in this repository.
-
-Create the following directory structure:
-```
-./workflow/
-├── context/
-│   ├── prd.md
-│   ├── tech-stack.md
-│   ├── coding-standards.md
-│   └── project-charter.md
-├── scratchpad/
-├── logs/
-└── epics/
-```
-
-Copy template content to context files from the templates section below. Create a .gitignore entry to ignore logs/ and scratchpad/ but keep context/ files versioned.
-
-Display: "✅ Claude Dev Workflow initialized! Edit ./workflow/context/ files to configure your project."
-
----
-
-### /plan [issue_number]
-**Role: Product Owner Agent**
-
-Analyze GitHub issue and create a detailed implementation plan using project context.
-
-**Context Loading:**
-Load and incorporate these project documents:
-- ./workflow/context/prd.md (Product Requirements)
-- ./workflow/context/tech-stack.md (Technology Stack) 
-- ./workflow/context/project-charter.md (Project Goals)
-- ./workflow/context/coding-standards.md (Development Standards)
-
-**Task:**
-1. Analyze GitHub issue #{issue_number}
-2. Create implementation plan that includes:
-   - Business requirements analysis aligned with PRD
-   - Acceptance criteria based on project standards
-   - Technical considerations using project tech stack
-   - Risk assessment and mitigation strategies
-   - Success metrics and validation approach
-3. Save plan to ./workflow/scratchpad/issue-{issue_number}/plan.md
-4. Log activity to ./workflow/logs/planning.jsonl
-5. Update GitHub issue with the plan:
-   - Add comment with implementation plan summary
-   - Add relevant labels (e.g., "planned", "ready-for-dev")
-   - Update issue description if needed
-   - Use: `gh issue comment {issue_number} --body-file ./workflow/scratchpad/issue-{issue_number}/plan.md`
-
-**Format the plan clearly for the engineering team with sections for requirements, acceptance criteria, technical approach, and risks.**
-
-Display: "📋 Plan created and posted to issue #{issue_number}. Next: /dev {issue_number}"
-
----
-
-### /dev [issue_number]
-**Role: Software Engineer Agent**
-
-Implement the solution following GitHub Flow and project standards.
-
-**Context Loading:**
-Load project context and previous work:
-- All files from ./workflow/context/ 
-- ./workflow/scratchpad/issue-{issue_number}/plan.md (Implementation Plan)
-
-**Task:**
-1. Review the implementation plan thoroughly
-2. Create development guidance that includes:
-   - Feature branch creation: feature/issue-{issue_number}-[description]
-   - Code implementation following project architecture patterns
-   - Test strategy aligned with project testing standards
-   - Documentation updates required
-   - Pull request preparation checklist
-3. Provide step-by-step implementation guidance
-4. Save development notes to ./workflow/scratchpad/issue-{issue_number}/development.md
-5. Log activity to ./workflow/logs/development.jsonl
-6. Implement the solution and create pull request:
-   - Create feature branch: `git checkout -b feature/issue-{issue_number}-[description]`
-   - Implement code changes following the guidance
-   - Commit changes with descriptive messages
-   - Push branch: `git push -u origin feature/issue-{issue_number}-[description]`
-   - Create PR: `gh pr create --title "Fix #{issue_number}: [Description]" --body-file ./workflow/scratchpad/issue-{issue_number}/development.md --base main`
-   - Link to issue: `gh pr edit --add-label "issue-{issue_number}"`
-
-**Ensure implementation follows:**
-- Project tech stack requirements
-- Coding standards and conventions
-- Architecture patterns established in project
-- Testing and quality requirements
-
-Display: "🔧 Development complete and PR created for issue #{issue_number}. Next: /review [pr_number] {issue_number}"
-
----
-
-### /review [pr_number] [issue_number]
-**Role: Senior Engineering Manager Agent**
-
-Perform comprehensive code review against project standards and requirements.
-
-**Context Loading:**
-Load complete project context and workflow history:
-- All files from ./workflow/context/
-- ./workflow/scratchpad/issue-{issue_number}/plan.md (if issue_number provided)
-- ./workflow/scratchpad/issue-{issue_number}/development.md (if issue_number provided)
-
-**Task:**
-1. Review GitHub PR #{pr_number} comprehensively
-2. Check CI/CD status and test results:
-   - Run: `gh pr checks {pr_number}`
-   - Review failed checks and test results
-   - Analyze build logs for warnings or issues
-   - Check code coverage reports
-3. Evaluate against project criteria:
-   - Code quality meets coding standards
-   - Architecture aligns with tech stack decisions
-   - Security follows project guidelines
-   - Performance meets project requirements
-   - Tests are adequate per project standards
-   - Documentation is complete and accurate
-   - Alignment with original business requirements
-   - CI/CD pipeline passes all checks
-4. Provide specific, actionable feedback with priority levels:
-   - **Must Fix** (blocking issues that prevent merge)
-   - **Should Fix** (important improvements for code quality)
-   - **Consider** (optional enhancements for future iterations)
-5. Save review to ./workflow/scratchpad/issue-{issue_number}/review.md
-6. Log activity to ./workflow/logs/review.jsonl
-7. Post review to GitHub PR:
-   - Add review comments: `gh pr review {pr_number} --comment --body-file ./workflow/scratchpad/issue-{issue_number}/review.md`
-   - Add merge recommendation at the end of review:
-     - ✅ **READY TO MERGE** - All checks pass, code quality excellent
-     - 🔄 **NEEDS CHANGES** - Must fix issues before merge
-     - ⚠️ **MERGE WITH CAUTION** - Minor issues but can proceed
-   - Do NOT merge - only provide recommendation
-
-Display: "📝 Review complete for PR #{pr_number} with merge recommendation. Check GitHub PR for detailed feedback."
-
----
-
-### /status
-Show current workflow status and active issues.
-
-**Task:**
-1. Display current repository name
-2. Check if workflow is initialized (./workflow/ exists)
-3. List active issues in ./workflow/scratchpad/ with status:
-   - [P] = plan.md exists
-   - [D] = development.md exists  
-   - [R] = review.md exists
-4. Show recent activity from logs
-
-**Example Output:**
-```
-Workflow Status for: my-awesome-app
-✅ Initialized
-
-Active Issues:
-  Issue #123: [P][D] 
-  Issue #124: [P]
-  Issue #125: [P][D][R]
-```
-
----
-
-### /view [issue_number]
-Display all workflow files for a specific issue.
-
-**Task:**
-1. Check if ./workflow/scratchpad/issue-{issue_number}/ exists
-2. Display contents of all .md files in that directory:
-   - plan.md (if exists)
-   - development.md (if exists)
-   - review.md (if exists)
-3. Format output with clear section headers
-
-Display issue contents with clear separation between plan, development, and review sections.
-
----
-
-### /epic [epic_name]
-Create and manage epic-level planning.
-
-**Task:**
-1. Create ./workflow/epics/{epic_name}.md
-2. Include epic template with:
-   - Epic description and goals
-   - Success criteria
-   - Timeline and milestones
-   - Related issues list
-   - Stakeholder requirements
-3. Link to project context and constraints
-
----
-
-## Template Content
-
-### PRD Template (workflow/context/prd.md)
-```markdown
-# Product Requirements Document
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-[Brief description of the project and its purpose]
 
-## Target Users
-[Who will use this product]
+Dialtone is a self-hosted voice-to-Obsidian system that processes audio recordings locally using AI (Whisper for transcription, Ollama for summarization) and saves formatted notes to an Obsidian vault. The system is built with FastAPI and runs in Docker containers.
 
-## Key Features
-[List of main features and capabilities]
+## Development Commands
 
-## Success Metrics
-[How success will be measured]
+### Environment Setup
+```bash
+# Quick setup (< 10 minutes)
+./scripts/setup.sh
 
-## Constraints
-[Technical, business, or resource constraints]
-
-## Requirements
-[Detailed functional and non-functional requirements]
+# Manual Docker setup
+docker-compose up -d
+docker-compose logs -f voice-notes-api
 ```
 
-### Tech Stack Template (workflow/context/tech-stack.md)
-```markdown
-# Technology Stack
+### Testing
+```bash
+# Run all tests with coverage
+pytest tests/ -v --cov=app
 
-## Frontend
-[Frontend technologies, frameworks, libraries]
+# Run specific test file
+pytest tests/api/test_audio.py -v
 
-## Backend
-[Backend technologies, frameworks, APIs]
+# Run single test
+pytest tests/services/test_transcription.py::test_transcribe_audio_success -v
 
-## Database
-[Database technology and structure decisions]
-
-## Infrastructure
-[Hosting, deployment, monitoring tools]
-
-## Development Tools
-[Build tools, testing frameworks, CI/CD]
-
-## Architecture Patterns
-[Design patterns and architectural decisions]
+# Run tests with debugging
+pytest tests/services/test_whisper_model.py -v -s
 ```
 
-### Coding Standards Template (workflow/context/coding-standards.md)
-```markdown
-# Coding Standards
+### Code Quality
+```bash
+# Format code (required before commits)
+black app tests
 
-## Code Style
-[Formatting, naming conventions, code organization]
+# Sort imports
+isort app tests
 
-## Best Practices
-[Development practices, patterns to follow/avoid]
+# Type checking
+mypy app
 
-## Testing Requirements
-[Unit testing, integration testing, coverage requirements]
-
-## Documentation
-[Code documentation, API documentation standards]
-
-## Review Process
-[Pull request requirements, review criteria]
-
-## Quality Gates
-[Linting, type checking, automated quality checks]
+# Run all quality checks
+black app tests && isort app tests && mypy app
 ```
 
-### Project Charter Template (workflow/context/project-charter.md)
-```markdown
-# Project Charter
+### Docker Operations
+```bash
+# View service logs
+docker-compose logs -f voice-notes-api
+docker-compose logs -f ollama
 
-## Project Mission
-[What this project aims to achieve]
+# Restart specific service
+docker-compose restart voice-notes-api
 
-## Business Goals
-[Business objectives and expected outcomes]
+# Rebuild and restart
+docker-compose down
+docker-compose up -d --build
 
-## Technical Goals
-[Technical objectives and architectural goals]
-
-## Timeline
-[Key milestones and delivery dates]
-
-## Team Structure
-[Roles and responsibilities]
-
-## Definition of Done
-[Criteria for considering work complete]
-
-## Risk Management
-[Identified risks and mitigation strategies]
+# Shell into container
+docker-compose exec voice-notes-api /bin/bash
 ```
 
----
+## Architecture
 
-## Gitignore Addition
+### High-Level Structure
+```
+app/
+├── main.py              # FastAPI app creation & lifespan management
+├── config.py            # Logging setup
+├── api/                 # API endpoints (health, audio)
+├── core/                # Core infrastructure
+│   ├── settings.py      # Pydantic settings with validation
+│   ├── exceptions.py    # Custom exception classes
+│   ├── handlers.py      # Exception handlers
+│   ├── middleware.py    # Request ID & logging middleware
+│   └── health/          # Health check system
+└── services/            # Business logic services
+    ├── audio_converter.py    # FFmpeg audio processing
+    ├── whisper_model.py      # Whisper model management
+    ├── transcription.py      # Transcription orchestration
+    ├── ollama.py            # Ollama AI summarization
+    ├── markdown_formatter.py # Obsidian markdown generation
+    └── upload.py            # File upload handling
+```
 
-Add these lines to your .gitignore:
+### Service Layer Pattern
+The application uses a layered architecture where:
+- **API Layer** (`app/api/`) handles HTTP requests/responses
+- **Service Layer** (`app/services/`) contains business logic
+- **Core Layer** (`app/core/`) provides infrastructure utilities
+
+Services are designed to be:
+- Async-first with proper resource management
+- Stateless with dependency injection
+- Testable with clear interfaces
+- Error-handling with custom exceptions
+
+### Key Architectural Decisions
+
+**Settings Management**: Uses Pydantic with environment validation. Settings are centralized in `app/core/settings.py` with field validation and automatic directory creation.
+
+**Error Handling**: Custom exception hierarchy in `app/core/exceptions.py` with specialized handlers in `app/core/handlers.py`. All services raise typed exceptions that map to appropriate HTTP responses.
+
+**Resource Management**: Services use async context managers for cleanup (e.g., Whisper model loading, Ollama connections). The FastAPI lifespan handles service initialization and shutdown.
+
+**Processing Pipeline**: Audio processing follows this flow:
+1. Upload validation and storage (`upload.py`)
+2. Audio format conversion (`audio_converter.py`) 
+3. Whisper transcription (`whisper_model.py`, `transcription.py`)
+4. Ollama summarization (`ollama.py`)
+5. Markdown formatting (`markdown_formatter.py`)
+6. Obsidian vault saving
+
+**Container Architecture**: Two-service Docker setup:
+- `voice-notes-api`: FastAPI app with Whisper models
+- `ollama`: Separate AI service for summarization
+- Shared network with health checks and resource limits
+
+## Configuration
+
+### Environment Variables
+Key settings are configured via environment variables (see `app/core/settings.py`):
+
+```bash
+# Core paths
+OBSIDIAN_VAULT_PATH=/path/to/vault  # Required for local development
+
+# Processing limits
+MAX_UPLOAD_SIZE=52428800            # 50MB default
+PROCESSING_TIMEOUT=35               # seconds
+MAX_CONCURRENT_REQUESTS=3
+
+# AI services
+WHISPER_MODEL_SIZE=base             # tiny|base|small|medium|large
+OLLAMA_MODEL=llama2:7b              # AI model for summarization
+OLLAMA_ENABLED=true                 # Enable/disable summarization
 ```
-# Claude Dev Workflow - ignore working files, keep context
-workflow/logs/
-workflow/scratchpad/
-```
+
+### Testing Configuration
+Tests use environment variable `TESTING=true` to skip directory validation and external service dependencies. Test files are organized to mirror the app structure.
+
+## Development Workflow
+
+### Branch Strategy
+- Main development on `feature/issue-1-docker-fastapi-setup`
+- Feature branches: `feature/issue-{number}-{description}`
+- Use conventional commits: `feat:`, `fix:`, `test:`, `docs:`
+
+### Quality Requirements
+- Black formatting (88 character lines)
+- isort import sorting  
+- mypy type checking
+- Minimum 80% test coverage
+- All tests must pass before merge
+
+### Testing Strategy
+- Unit tests for individual services
+- Integration tests for full workflows
+- Mock external dependencies (Ollama, file system)
+- Test error conditions and edge cases
+- Use pytest fixtures for common setup
+
+## Common Issues
+
+### Whisper Model Loading
+The Whisper model is pre-downloaded in the Docker image, but first-time local runs may be slow. Models are cached in the container.
+
+### Ollama Service Communication
+The API depends on the Ollama service being healthy. Check `docker-compose logs ollama` if summarization fails. The service has a 120s startup period for model loading.
+
+### File Permissions
+The Docker container runs as non-root user `appuser`. Ensure the Obsidian vault path has appropriate permissions for Docker volume mounts.
+
+### Memory Usage
+Whisper models require significant memory. The `base` model needs ~1GB RAM. Adjust Docker resource limits in `docker-compose.yml` if needed.

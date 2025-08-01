@@ -109,3 +109,60 @@ class ServiceUnavailableError(ServiceError):
         details = {"service": service} if service else {}
         super().__init__(message, "SERVICE_UNAVAILABLE", details)
         self.status_code = 503
+
+
+class VaultError(VoiceNotesError):
+    """Base exception for vault operations."""
+
+    def __init__(
+        self,
+        message: str = "Vault operation failed",
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Initialize vault error."""
+        super().__init__(
+            message=message,
+            status_code=500,
+            error_code="VAULT_ERROR",
+            details=details,
+        )
+
+
+class VaultAccessError(VaultError):
+    """Vault access permission error."""
+
+    def __init__(
+        self,
+        message: str = "Unable to access vault",
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Initialize vault access error."""
+        super().__init__(message=message, details=details)
+        self.error_code = "VAULT_ACCESS_ERROR"
+
+
+class VaultWriteError(VaultError):
+    """File writing error."""
+
+    def __init__(
+        self,
+        message: str = "Failed to write file to vault",
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Initialize vault write error."""
+        super().__init__(message=message, details=details)
+        self.error_code = "VAULT_WRITE_ERROR"
+
+
+class VaultConfigurationError(VaultError):
+    """Vault configuration error."""
+
+    def __init__(
+        self,
+        message: str = "Vault configuration is invalid",
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Initialize vault configuration error."""
+        super().__init__(message=message, details=details)
+        self.error_code = "VAULT_CONFIG_ERROR"
+        self.status_code = 503

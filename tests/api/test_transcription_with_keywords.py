@@ -1,8 +1,9 @@
 """Integration tests for transcription API with keyword extraction."""
 
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
 from httpx import AsyncClient
-from unittest.mock import AsyncMock, Mock, patch
 
 from app.core.settings import settings
 from app.main import app
@@ -18,14 +19,22 @@ class TestTranscriptionWithKeywords:
             "text": "This is a test transcription about project management and team collaboration in our software development process.",
             "language": "en",
             "segments": [
-                {"avg_logprob": -0.2, "text": "This is a test transcription about project management"}
+                {
+                    "avg_logprob": -0.2,
+                    "text": "This is a test transcription about project management",
+                }
             ],
         }
 
     @pytest.fixture
     def mock_keywords(self):
         """Mock extracted keywords."""
-        return ["project-management", "team-collaboration", "software-development", "process"]
+        return [
+            "project-management",
+            "team-collaboration",
+            "software-development",
+            "process",
+        ]
 
     @pytest.fixture
     def mock_summary(self):
@@ -33,7 +42,9 @@ class TestTranscriptionWithKeywords:
         return "- Project management discussion\n- Team collaboration strategies\n- Software development process review"
 
     @pytest.mark.asyncio
-    async def test_full_pipeline_with_keywords(self, mock_transcription_result, mock_keywords, mock_summary):
+    async def test_full_pipeline_with_keywords(
+        self, mock_transcription_result, mock_keywords, mock_summary
+    ):
         """Test complete transcription pipeline including keywords."""
         with patch.multiple(
             "app.services.transcription",
@@ -115,7 +126,9 @@ class TestTranscriptionWithKeywords:
                 settings.keyword_extraction_enabled = original_enabled
 
     @pytest.mark.asyncio
-    async def test_api_response_structure_includes_keywords(self, mock_transcription_result, mock_keywords):
+    async def test_api_response_structure_includes_keywords(
+        self, mock_transcription_result, mock_keywords
+    ):
         """Test API response structure includes keyword fields."""
         with patch.multiple(
             "app.services.transcription",
@@ -175,7 +188,7 @@ class TestTranscriptionWithKeywords:
                     "keywords",
                     "keyword_processing_time",
                 ]
-                
+
                 for field in required_fields:
                     assert field in data, f"Missing required field: {field}"
 
@@ -248,7 +261,9 @@ class TestTranscriptionWithKeywords:
                 settings.keyword_extraction_enabled = original_enabled
 
     @pytest.mark.asyncio
-    async def test_keyword_extraction_with_service_failure(self, mock_transcription_result):
+    async def test_keyword_extraction_with_service_failure(
+        self, mock_transcription_result
+    ):
         """Test API behavior when keyword extraction fails."""
         with patch.multiple(
             "app.services.transcription",
@@ -312,7 +327,7 @@ class TestTranscriptionWithKeywords:
     async def test_keyword_configuration_validation(self, mock_transcription_result):
         """Test that keyword count configuration is properly validated."""
         mock_many_keywords = [f"keyword{i}" for i in range(15)]  # More than max allowed
-        
+
         with patch.multiple(
             "app.services.transcription",
             whisper_manager=Mock(
@@ -333,7 +348,9 @@ class TestTranscriptionWithKeywords:
             ),
             ollama_service=Mock(
                 health_check=AsyncMock(return_value=True),
-                extract_keywords=AsyncMock(return_value=mock_many_keywords[:3]),  # Respects limit
+                extract_keywords=AsyncMock(
+                    return_value=mock_many_keywords[:3]
+                ),  # Respects limit
             ),
         ), patch("app.services.transcription.Path") as mock_path:
             # Mock file system
@@ -373,7 +390,9 @@ class TestTranscriptionWithKeywords:
                 settings.keyword_max_count = original_count
 
     @pytest.mark.asyncio
-    async def test_performance_impact_of_keyword_extraction(self, mock_transcription_result, mock_keywords):
+    async def test_performance_impact_of_keyword_extraction(
+        self, mock_transcription_result, mock_keywords
+    ):
         """Test that keyword extraction doesn't significantly impact performance."""
         with patch.multiple(
             "app.services.transcription",
@@ -424,14 +443,22 @@ class TestTranscriptionWithKeywords:
                 data = response.json()
 
                 # Verify performance metrics are reasonable
-                assert data["processing_time_seconds"] < 30  # Total should be under 30s for test
-                
-                if "keyword_processing_time" in data and data["keyword_processing_time"]:
+                assert (
+                    data["processing_time_seconds"] < 30
+                )  # Total should be under 30s for test
+
+                if (
+                    "keyword_processing_time" in data
+                    and data["keyword_processing_time"]
+                ):
                     # Keyword extraction should be fast
                     assert data["keyword_processing_time"] < 5  # Should be under 5s
-                    
+
                     # Keyword extraction should be small portion of total time
-                    keyword_ratio = data["keyword_processing_time"] / data["processing_time_seconds"]
+                    keyword_ratio = (
+                        data["keyword_processing_time"]
+                        / data["processing_time_seconds"]
+                    )
                     assert keyword_ratio < 0.5  # Less than 50% of total time
 
             finally:

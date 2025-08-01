@@ -346,97 +346,108 @@ class TestTranscriptionService:
     @patch("app.services.transcription.whisper_manager")
     @patch("app.services.transcription.audio_converter")
     @patch("app.services.transcription.settings")
-    async def test_transcribe_file_with_summary_success(self, mock_settings, mock_converter, mock_whisper, mock_ollama, tmp_path):
+    async def test_transcribe_file_with_summary_success(
+        self, mock_settings, mock_converter, mock_whisper, mock_ollama, tmp_path
+    ):
         """Test successful transcription with summary generation."""
         # Setup mocks
         audio_file = tmp_path / "test.wav"
         audio_file.write_text("fake audio data")
-        
+
         mock_settings.upload_dir = tmp_path
         mock_converter.get_audio_info.return_value = {
             "duration": 30.0,
             "format": "wav",
             "sample_rate": 16000,
-            "channels": 1
+            "channels": 1,
         }
         mock_converter.is_conversion_needed.return_value = False
-        
+
         mock_whisper.is_loaded = True
         mock_whisper.is_loading = False
         mock_whisper.transcribe.return_value = {
             "text": "This is a test transcription about a project meeting with action items.",
             "language": "en",
-            "segments": [{"avg_logprob": -0.5}]
+            "segments": [{"avg_logprob": -0.5}],
         }
-        
+
         mock_ollama.health_check.return_value = True
         mock_ollama.generate_summary.return_value = "- Project meeting discussed\n- Action items identified\n- Next steps planned"
-        
+
         service = TranscriptionService()
-        
+
         result = await service.transcribe_file(
             audio_file, "test-upload", None, include_summary=True, max_summary_words=100
         )
-        
+
         # Verify transcription result
         assert result["upload_id"] == "test-upload"
-        assert result["transcription"]["text"] == "This is a test transcription about a project meeting with action items."
+        assert (
+            result["transcription"]["text"]
+            == "This is a test transcription about a project meeting with action items."
+        )
         assert result["transcription"]["language"] == "en"
         assert result["status"] == "completed"
-        
+
         # Verify summary was generated
-        assert result["summary"] == "- Project meeting discussed\n- Action items identified\n- Next steps planned"
+        assert (
+            result["summary"]
+            == "- Project meeting discussed\n- Action items identified\n- Next steps planned"
+        )
         assert result["summary_processing_time"] is not None
         assert result["summary_processing_time"] > 0
-        
+
         # Verify service calls
         mock_ollama.health_check.assert_called_once()
         mock_ollama.generate_summary.assert_called_once_with(
-            "This is a test transcription about a project meeting with action items.", 100
+            "This is a test transcription about a project meeting with action items.",
+            100,
         )
 
     @patch("app.services.transcription.ollama_service")
     @patch("app.services.transcription.whisper_manager")
     @patch("app.services.transcription.audio_converter")
     @patch("app.services.transcription.settings")
-    async def test_transcribe_file_with_summary_ollama_unavailable(self, mock_settings, mock_converter, mock_whisper, mock_ollama, tmp_path):
+    async def test_transcribe_file_with_summary_ollama_unavailable(
+        self, mock_settings, mock_converter, mock_whisper, mock_ollama, tmp_path
+    ):
         """Test transcription with summary when Ollama service is unavailable."""
         # Setup mocks
         audio_file = tmp_path / "test.wav"
         audio_file.write_text("fake audio data")
-        
+
         mock_settings.upload_dir = tmp_path
         mock_converter.get_audio_info.return_value = {
             "duration": 30.0,
             "format": "wav",
             "sample_rate": 16000,
-            "channels": 1
+            "channels": 1,
         }
         mock_converter.is_conversion_needed.return_value = False
-        
+
         mock_whisper.is_loaded = True
         mock_whisper.is_loading = False
         mock_whisper.transcribe.return_value = {
             "text": "This is a test transcription.",
             "language": "en",
-            "segments": [{"avg_logprob": -0.5}]
+            "segments": [{"avg_logprob": -0.5}],
         }
-        
+
         # Ollama service is unavailable
         mock_ollama.health_check.return_value = False
-        
+
         service = TranscriptionService()
-        
+
         result = await service.transcribe_file(
             audio_file, "test-upload", None, include_summary=True, max_summary_words=100
         )
-        
+
         # Verify transcription succeeded but no summary
         assert result["upload_id"] == "test-upload"
         assert result["transcription"]["text"] == "This is a test transcription."
         assert result["summary"] is None
         assert result["summary_processing_time"] is None
-        
+
         # Verify Ollama generate_summary was not called
         mock_ollama.health_check.assert_called_once()
         mock_ollama.generate_summary.assert_not_called()
@@ -445,44 +456,48 @@ class TestTranscriptionService:
     @patch("app.services.transcription.whisper_manager")
     @patch("app.services.transcription.audio_converter")
     @patch("app.services.transcription.settings")
-    async def test_transcribe_file_with_summary_generation_fails(self, mock_settings, mock_converter, mock_whisper, mock_ollama, tmp_path):
+    async def test_transcribe_file_with_summary_generation_fails(
+        self, mock_settings, mock_converter, mock_whisper, mock_ollama, tmp_path
+    ):
         """Test transcription when summary generation fails gracefully."""
         # Setup mocks
         audio_file = tmp_path / "test.wav"
         audio_file.write_text("fake audio data")
-        
+
         mock_settings.upload_dir = tmp_path
         mock_converter.get_audio_info.return_value = {
             "duration": 30.0,
             "format": "wav",
             "sample_rate": 16000,
-            "channels": 1
+            "channels": 1,
         }
         mock_converter.is_conversion_needed.return_value = False
-        
+
         mock_whisper.is_loaded = True
         mock_whisper.is_loading = False
         mock_whisper.transcribe.return_value = {
             "text": "This is a test transcription.",
             "language": "en",
-            "segments": [{"avg_logprob": -0.5}]
+            "segments": [{"avg_logprob": -0.5}],
         }
-        
+
         mock_ollama.health_check.return_value = True
-        mock_ollama.generate_summary.side_effect = Exception("Summary generation failed")
-        
+        mock_ollama.generate_summary.side_effect = Exception(
+            "Summary generation failed"
+        )
+
         service = TranscriptionService()
-        
+
         result = await service.transcribe_file(
             audio_file, "test-upload", None, include_summary=True, max_summary_words=100
         )
-        
+
         # Verify transcription succeeded despite summary failure
         assert result["upload_id"] == "test-upload"
         assert result["transcription"]["text"] == "This is a test transcription."
         assert result["summary"] is None  # Should be None when generation fails
         assert result["summary_processing_time"] is None
-        
+
         # Verify summary generation was attempted
         mock_ollama.health_check.assert_called_once()
         mock_ollama.generate_summary.assert_called_once()
@@ -491,41 +506,43 @@ class TestTranscriptionService:
     @patch("app.services.transcription.whisper_manager")
     @patch("app.services.transcription.audio_converter")
     @patch("app.services.transcription.settings")
-    async def test_transcribe_file_without_summary(self, mock_settings, mock_converter, mock_whisper, mock_ollama, tmp_path):
+    async def test_transcribe_file_without_summary(
+        self, mock_settings, mock_converter, mock_whisper, mock_ollama, tmp_path
+    ):
         """Test transcription without summary (backward compatibility)."""
         # Setup mocks
         audio_file = tmp_path / "test.wav"
         audio_file.write_text("fake audio data")
-        
+
         mock_settings.upload_dir = tmp_path
         mock_converter.get_audio_info.return_value = {
             "duration": 30.0,
             "format": "wav",
             "sample_rate": 16000,
-            "channels": 1
+            "channels": 1,
         }
         mock_converter.is_conversion_needed.return_value = False
-        
+
         mock_whisper.is_loaded = True
         mock_whisper.is_loading = False
         mock_whisper.transcribe.return_value = {
             "text": "This is a test transcription.",
             "language": "en",
-            "segments": [{"avg_logprob": -0.5}]
+            "segments": [{"avg_logprob": -0.5}],
         }
-        
+
         service = TranscriptionService()
-        
+
         result = await service.transcribe_file(
             audio_file, "test-upload", None, include_summary=False
         )
-        
+
         # Verify transcription result without summary fields
         assert result["upload_id"] == "test-upload"
         assert result["transcription"]["text"] == "This is a test transcription."
         assert "summary" not in result
         assert "summary_processing_time" not in result
-        
+
         # Verify Ollama service was not called
         mock_ollama.health_check.assert_not_called()
         mock_ollama.generate_summary.assert_not_called()
