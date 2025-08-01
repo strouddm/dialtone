@@ -252,7 +252,7 @@ Keywords:"""
 
                 if keywords_text:
                     # Parse keywords from response
-                    keywords = []
+                    keywords: list[str] = []
                     for line in keywords_text.split("\n"):
                         keyword = line.strip().strip("-").strip("•").strip("*").strip()
                         if keyword and len(keywords) < max_keywords:

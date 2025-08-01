@@ -231,8 +231,10 @@ async def transcribe_audio(
     - **language**: Optional language hint (e.g., 'en', 'es', 'fr')
     - **include_summary**: Generate AI summary of transcription (default: false)
     - **max_summary_words**: Maximum words in summary, 50-300 (default: 150)
-    
-    Note: Keyword extraction is automatically enabled if Ollama service is available.
+
+    **Keyword Extraction**: Automatically extracts 3-5 keywords when enabled in configuration.
+    Keywords are returned in the response when Ollama service is available and keyword
+    extraction is enabled (default: true). This is controlled globally, not per-request.
     """
     request_id = getattr(request.state, "request_id", "unknown")
     upload_id = transcription_request.upload_id
@@ -267,7 +269,9 @@ async def transcribe_audio(
                 "summary_processing_time"
             ),
             "keywords_extracted": transcription_data.get("keywords") is not None,
-            "keyword_count": len(transcription_data["keywords"]) if transcription_data.get("keywords") else 0,
+            "keyword_count": len(transcription_data["keywords"])
+            if transcription_data.get("keywords")
+            else 0,
             "keyword_processing_time": transcription_data.get(
                 "keyword_processing_time"
             ),

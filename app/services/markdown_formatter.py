@@ -36,7 +36,7 @@ class MarkdownFormatter:
             transcription_text = "No transcription content available."
 
         # Build YAML frontmatter
-        frontmatter = {
+        frontmatter: Dict[str, Any] = {
             "type": "voice-note",
             "created": datetime.now().isoformat(),
             "processed_by": "dialtone",
