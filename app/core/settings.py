@@ -84,6 +84,23 @@ class Settings(BaseSettings):
         le=900,
     )
 
+    # Ollama Configuration
+    ollama_base_url: str = Field(
+        default="http://ollama:11434", description="Ollama service base URL"
+    )
+    ollama_model: str = Field(
+        default="llama2:7b", description="Ollama model to use for summarization"
+    )
+    ollama_timeout: int = Field(
+        default=30, description="Ollama request timeout in seconds", ge=5, le=120
+    )
+    ollama_max_retries: int = Field(
+        default=3, description="Maximum Ollama request retries", ge=1, le=5
+    )
+    ollama_enabled: bool = Field(
+        default=True, description="Enable Ollama summarization service"
+    )
+
     # Server
     api_host: str = Field(default="0.0.0.0", description="API host")
     api_port: int = Field(default=8000, description="API port", ge=1, le=65535)

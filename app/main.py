@@ -37,14 +37,45 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 "vault_path": str(settings.obsidian_vault_path),
                 "max_upload_size": settings.max_upload_size,
                 "processing_timeout": settings.processing_timeout,
+                "ollama_enabled": settings.ollama_enabled,
             },
         },
     )
+
+    # Initialize Ollama service if enabled
+    if settings.ollama_enabled:
+        try:
+            from app.services.ollama import ollama_service
+            
+            logger.info("Initializing Ollama service")
+            # Check if service is accessible
+            if await ollama_service.health_check():
+                logger.info("Ollama service is healthy")
+                # Try to ensure model is loaded (non-blocking)
+                try:
+                    await ollama_service.ensure_model_loaded()
+                    logger.info(f"Ollama model {settings.ollama_model} loaded successfully")
+                except Exception as e:
+                    logger.warning(f"Could not pre-load Ollama model: {e}")
+            else:
+                logger.warning("Ollama service is not accessible - will retry on first request")
+                
+        except Exception as e:
+            logger.error(f"Failed to initialize Ollama service: {e}")
 
     yield
 
     # Shutdown
     logger.info("Shutting down Dialtone API")
+    
+    # Clean up Ollama service
+    if settings.ollama_enabled:
+        try:
+            from app.services.ollama import ollama_service
+            await ollama_service.close()
+            logger.info("Ollama service connection closed")
+        except Exception as e:
+            logger.warning(f"Error closing Ollama service: {e}")
 
 
 def create_app() -> FastAPI:

@@ -163,13 +163,24 @@ class SystemMonitor:
         """Check status of service dependencies."""
         services = {
             "fastapi": HealthStatus.HEALTHY,  # Always healthy if we're responding
-            "whisper": HealthStatus.HEALTHY,  # TODO: Check when Whisper is integrated
-            "ollama": HealthStatus.HEALTHY,  # TODO: Check when Ollama is integrated
         }
 
-        # For now, mark future services as not implemented
-        services["whisper"] = HealthStatus.HEALTHY  # Updated in issue #3
-        services["ollama"] = HealthStatus.HEALTHY  # Will be updated in future
+        # Check Whisper service (already implemented)
+        services["whisper"] = HealthStatus.HEALTHY  # Whisper is locally loaded
+
+        # Check Ollama service
+        try:
+            from app.services.ollama import ollama_service
+            
+            if not ollama_service.enabled:
+                services["ollama"] = HealthStatus.DEGRADED
+            else:
+                # Check if Ollama is responsive
+                is_healthy = await ollama_service.health_check()
+                services["ollama"] = HealthStatus.HEALTHY if is_healthy else HealthStatus.UNHEALTHY
+        except Exception as e:
+            logger.warning(f"Failed to check Ollama service: {e}")
+            services["ollama"] = HealthStatus.UNHEALTHY
 
         return services
 
