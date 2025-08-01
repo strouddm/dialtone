@@ -223,6 +223,67 @@ class TranscriptionService:
                             extra={"upload_id": upload_id},
                         )
 
+                # Extract keywords if enabled
+                keywords = None
+                keyword_processing_time = None
+
+                if settings.keyword_extraction_enabled:
+                    keyword_start_time = time.time()
+                    transcription_text = result.get("text", "").strip()
+
+                    if transcription_text:
+                        try:
+                            # Check if Ollama service is available
+                            if await ollama_service.health_check():
+                                logger.info(
+                                    "Extracting keywords from transcription",
+                                    extra={
+                                        "upload_id": upload_id,
+                                        "text_length": len(transcription_text),
+                                        "max_keywords": settings.keyword_max_count,
+                                    },
+                                )
+                                keywords = await ollama_service.extract_keywords(
+                                    transcription_text, settings.keyword_max_count
+                                )
+                                keyword_processing_time = round(
+                                    time.time() - keyword_start_time, 2
+                                )
+                                logger.info(
+                                    "Keywords extracted successfully",
+                                    extra={
+                                        "upload_id": upload_id,
+                                        "keyword_count": len(keywords)
+                                        if keywords
+                                        else 0,
+                                        "keyword_time": keyword_processing_time,
+                                        "keywords": keywords[:3]
+                                        if keywords
+                                        else [],  # Log first 3 for debugging
+                                    },
+                                )
+                            else:
+                                logger.warning(
+                                    "Ollama service unavailable, skipping keyword extraction",
+                                    extra={"upload_id": upload_id},
+                                )
+                                keywords = []
+                        except Exception as e:
+                            logger.warning(
+                                "Failed to extract keywords, continuing without them",
+                                extra={
+                                    "upload_id": upload_id,
+                                    "error": str(e),
+                                },
+                            )
+                            keywords = []
+                    else:
+                        logger.info(
+                            "No transcription text available for keyword extraction",
+                            extra={"upload_id": upload_id},
+                        )
+                        keywords = []
+
                 processing_time = time.time() - start_time
 
                 # Format response
@@ -243,6 +304,11 @@ class TranscriptionService:
                     response["summary"] = summary
                     response["summary_processing_time"] = summary_processing_time
 
+                # Add keyword fields if extraction is enabled
+                if settings.keyword_extraction_enabled:
+                    response["keywords"] = keywords
+                    response["keyword_processing_time"] = keyword_processing_time
+
                 logger.info(
                     "Transcription completed successfully",
                     extra={
@@ -252,6 +318,11 @@ class TranscriptionService:
                         "language": response["transcription"]["language"],
                         "summary_generated": summary is not None,
                         "summary_time": summary_processing_time,
+                        "keywords_extracted": keywords is not None and len(keywords) > 0
+                        if keywords
+                        else False,
+                        "keyword_count": len(keywords) if keywords else 0,
+                        "keyword_time": keyword_processing_time,
                     },
                 )
 

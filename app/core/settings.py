@@ -101,6 +101,14 @@ class Settings(BaseSettings):
         default=True, description="Enable Ollama summarization service"
     )
 
+    # Keyword Extraction
+    keyword_extraction_enabled: bool = Field(
+        default=True, description="Enable keyword extraction from transcriptions"
+    )
+    keyword_max_count: int = Field(
+        default=5, description="Maximum number of keywords to extract", ge=1, le=10
+    )
+
     # Server
     api_host: str = Field(default="0.0.0.0", description="API host")
     api_port: int = Field(default=8000, description="API port", ge=1, le=65535)

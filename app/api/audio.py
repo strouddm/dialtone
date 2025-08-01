@@ -151,6 +151,8 @@ async def upload_audio(
                         },
                         "summary": "- Project meeting scheduled for tomorrow\n- Key topics to discuss identified\n- Voice note captured for reference",
                         "summary_processing_time": 1.2,
+                        "keywords": ["project", "meeting", "tomorrow", "voice-note"],
+                        "keyword_processing_time": 0.8,
                         "processing_time_seconds": 2.8,
                         "status": "completed",
                     }
@@ -223,12 +225,16 @@ async def transcribe_audio(
 
     Takes an upload ID from a previous upload and transcribes the audio content.
     Uses OpenAI Whisper for local, privacy-first transcription.
-    Optionally generates AI bullet-point summaries using Ollama.
+    Optionally generates AI bullet-point summaries and extracts keywords using Ollama.
 
     - **upload_id**: ID from successful audio upload
     - **language**: Optional language hint (e.g., 'en', 'es', 'fr')
     - **include_summary**: Generate AI summary of transcription (default: false)
     - **max_summary_words**: Maximum words in summary, 50-300 (default: 150)
+
+    **Keyword Extraction**: Automatically extracts 3-5 keywords when enabled in configuration.
+    Keywords are returned in the response when Ollama service is available and keyword
+    extraction is enabled (default: true). This is controlled globally, not per-request.
     """
     request_id = getattr(request.state, "request_id", "unknown")
     upload_id = transcription_request.upload_id
@@ -261,6 +267,13 @@ async def transcribe_audio(
             "summary_included": transcription_data.get("summary") is not None,
             "summary_processing_time": transcription_data.get(
                 "summary_processing_time"
+            ),
+            "keywords_extracted": transcription_data.get("keywords") is not None,
+            "keyword_count": len(transcription_data["keywords"])
+            if transcription_data.get("keywords")
+            else 0,
+            "keyword_processing_time": transcription_data.get(
+                "keyword_processing_time"
             ),
         },
     )
