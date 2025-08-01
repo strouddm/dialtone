@@ -1,7 +1,7 @@
 """Audio upload and transcription models."""
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -70,6 +70,12 @@ class TranscriptionResponse(BaseModel):
     )
     summary_processing_time: Optional[float] = Field(
         None, description="Time taken for summarization in seconds", ge=0.0
+    )
+    keywords: Optional[List[str]] = Field(
+        None, description="Extracted keywords from transcription"
+    )
+    keyword_processing_time: Optional[float] = Field(
+        None, description="Time taken for keyword extraction in seconds", ge=0.0
     )
     processing_time_seconds: float = Field(
         ..., description="Time taken to process", ge=0.0
