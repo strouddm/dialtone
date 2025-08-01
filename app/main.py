@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import __version__
-from app.api import audio, health, vault
+from app.api import audio, health, sessions, vault
 from app.config import setup_logging
 from app.core.exceptions import VoiceNotesError
 from app.core.handlers import (
@@ -67,6 +67,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         except Exception as e:
             logger.error(f"Failed to initialize Ollama service: {e}")
 
+    # Start session cleanup task
+    try:
+        from app.tasks.cleanup import start_cleanup_task
+
+        start_cleanup_task()
+        logger.info("Session cleanup task started")
+    except Exception as e:
+        logger.error(f"Failed to start session cleanup task: {e}")
+
     yield
 
     # Shutdown
@@ -122,6 +131,10 @@ def create_app() -> FastAPI:
             {
                 "name": "audio",
                 "description": "Audio upload and transcription endpoints",
+            },
+            {
+                "name": "sessions",
+                "description": "Session management for multi-step workflows",
             },
             {
                 "name": "vault",
@@ -203,6 +216,7 @@ def create_app() -> FastAPI:
             "endpoints": {
                 "upload": "/api/v1/audio/upload",
                 "transcribe": "/api/v1/audio/transcribe",
+                "sessions": "/api/v1/sessions",
                 "vault_save": "/api/v1/vault/save",
             },
         }
@@ -210,6 +224,7 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(health.router)
     app.include_router(audio.router, prefix="/api/v1")
+    app.include_router(sessions.router)
     app.include_router(vault.router, prefix="/api/v1")
 
     return app

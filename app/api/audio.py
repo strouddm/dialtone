@@ -1,11 +1,14 @@
 """Audio upload API endpoints."""
 
 import logging
+from typing import Optional
 
-from fastapi import APIRouter, File, Request, UploadFile, status
+from fastapi import APIRouter, File, Form, Request, UploadFile, status
 
 from app.models.audio import TranscriptionRequest, TranscriptionResponse, UploadResponse
 from app.models.common import ErrorResponse
+from app.models.session import AudioMetadata, SessionStatus
+from app.services.session_manager import session_manager
 from app.services.transcription import transcription_service
 from app.services.upload import upload_service
 
@@ -92,6 +95,9 @@ router = APIRouter(prefix="/api/v1/audio", tags=["audio"])
 async def upload_audio(
     request: Request,
     file: UploadFile = File(..., description="Audio file to upload (WebM, M4A, MP3)"),
+    session_id: Optional[str] = Form(
+        None, description="Optional session ID for workflow tracking"
+    ),
 ) -> UploadResponse:
     """
     Upload an audio file for processing.
@@ -100,6 +106,7 @@ async def upload_audio(
     Returns an upload ID that can be used to track processing status.
 
     - **file**: Audio file to upload (multipart/form-data)
+    - **session_id**: Optional session ID to associate upload with existing session
     """
     request_id = getattr(request.state, "request_id", "unknown")
 
@@ -110,11 +117,40 @@ async def upload_audio(
             "upload_filename": file.filename,
             "content_type": file.content_type,
             "file_size": getattr(file, "size", "unknown"),
+            "session_id": session_id,
         },
     )
 
     # Process the upload - exceptions will be handled by middleware
     upload_data = await upload_service.process_upload(file)
+
+    # Associate with session if provided
+    if session_id:
+        try:
+            audio_metadata = AudioMetadata(
+                upload_id=upload_data["upload_id"],
+                filename=upload_data["filename"],
+                file_size=upload_data["file_size"],
+                mime_type=upload_data.get("mime_type", "audio/unknown"),
+            )
+            await session_manager.update_session_data(
+                session_id,
+                audio_metadata=audio_metadata,
+                status=SessionStatus.PROCESSING,
+            )
+            logger.info(
+                "Upload associated with session",
+                extra={
+                    "request_id": request_id,
+                    "upload_id": upload_data["upload_id"],
+                    "session_id": session_id,
+                },
+            )
+        except Exception as e:
+            logger.warning(
+                f"Failed to update session {session_id} with upload data: {e}",
+                extra={"request_id": request_id, "session_id": session_id},
+            )
 
     logger.info(
         "Audio upload completed",
@@ -245,6 +281,7 @@ async def transcribe_audio(
             "request_id": request_id,
             "upload_id": upload_id,
             "language": transcription_request.language,
+            "session_id": transcription_request.session_id,
         },
     )
 
@@ -255,6 +292,59 @@ async def transcribe_audio(
         include_summary=transcription_request.include_summary,
         max_summary_words=transcription_request.max_summary_words or 150,
     )
+
+    # Update session with transcription results if session_id provided
+    if transcription_request.session_id:
+        try:
+            from app.models.session import TranscriptionData as SessionTranscriptionData
+
+            session_transcription = SessionTranscriptionData(
+                text=transcription_data["transcription"]["text"],
+                language=transcription_data["transcription"]["language"],
+                confidence=transcription_data["transcription"]["confidence"],
+                processing_time_seconds=transcription_data["processing_time_seconds"],
+            )
+
+            update_data = {
+                "transcription": session_transcription,
+                "status": SessionStatus.TRANSCRIBED,
+                "transcription_time": transcription_data["processing_time_seconds"],
+            }
+
+            # Add summary and keywords if available
+            if transcription_data.get("summary"):
+                update_data["summary"] = transcription_data["summary"]
+                update_data["summary_time"] = transcription_data.get(
+                    "summary_processing_time"
+                )
+                update_data["status"] = SessionStatus.SUMMARIZED
+
+            if transcription_data.get("keywords"):
+                update_data["keywords"] = transcription_data["keywords"]
+                update_data["keyword_time"] = transcription_data.get(
+                    "keyword_processing_time"
+                )
+
+            await session_manager.update_session_data(
+                transcription_request.session_id, **update_data
+            )
+
+            logger.info(
+                "Transcription results saved to session",
+                extra={
+                    "request_id": request_id,
+                    "upload_id": upload_id,
+                    "session_id": transcription_request.session_id,
+                },
+            )
+        except Exception as e:
+            logger.warning(
+                f"Failed to update session {transcription_request.session_id} with transcription: {e}",
+                extra={
+                    "request_id": request_id,
+                    "session_id": transcription_request.session_id,
+                },
+            )
 
     logger.info(
         "Transcription completed successfully",

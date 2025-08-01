@@ -109,6 +109,21 @@ class Settings(BaseSettings):
         default=5, description="Maximum number of keywords to extract", ge=1, le=10
     )
 
+    # Session Management
+    session_timeout_hours: int = Field(
+        default=1, description="Session timeout in hours", ge=1, le=24
+    )
+    session_storage_dir: Path = Field(
+        default=Path("/tmp/voice-notes/sessions"),
+        description="Directory for session storage",
+    )
+    session_cleanup_interval_minutes: int = Field(
+        default=30, description="Session cleanup interval in minutes", ge=5, le=60
+    )
+    max_sessions_per_user: int = Field(
+        default=10, description="Maximum active sessions per user", ge=1, le=50
+    )
+
     # Server
     api_host: str = Field(default="0.0.0.0", description="API host")
     api_port: int = Field(default=8000, description="API port", ge=1, le=65535)
@@ -157,6 +172,23 @@ class Settings(BaseSettings):
                 v.mkdir(parents=True, exist_ok=True)
             except Exception as e:
                 raise ValueError(f"Cannot create upload directory: {e}")
+        return v
+
+    @field_validator("session_storage_dir")
+    @classmethod
+    def validate_session_storage_dir(cls, v: Path) -> Path:
+        """Ensure session storage directory exists or can be created."""
+        # Skip directory creation in test environments
+        import os
+
+        if os.getenv("TESTING", "false").lower() == "true":
+            return v
+
+        if not v.exists():
+            try:
+                v.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                raise ValueError(f"Cannot create session storage directory: {e}")
         return v
 
 
