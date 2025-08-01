@@ -10,6 +10,7 @@ from fastapi import HTTPException, status
 
 from app.core.settings import settings
 from app.services.audio_converter import audio_converter
+from app.services.ollama import ollama_service
 from app.services.whisper_model import whisper_manager
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,11 @@ class TranscriptionService:
         self._active_transcriptions: Dict[str, asyncio.Task] = {}
 
     async def transcribe_upload(
-        self, upload_id: str, language: Optional[str] = None
+        self,
+        upload_id: str,
+        language: Optional[str] = None,
+        include_summary: bool = False,
+        max_summary_words: int = 150,
     ) -> Dict[str, Any]:
         """Transcribe uploaded audio file by upload_id."""
         # Get upload directory
@@ -58,10 +63,17 @@ class TranscriptionService:
             extra={"upload_id": upload_id, "audio_file": str(audio_file)},
         )
 
-        return await self.transcribe_file(audio_file, upload_id, language)
+        return await self.transcribe_file(
+            audio_file, upload_id, language, include_summary, max_summary_words
+        )
 
     async def transcribe_file(
-        self, audio_file: Path, upload_id: str, language: Optional[str] = None
+        self,
+        audio_file: Path,
+        upload_id: str,
+        language: Optional[str] = None,
+        include_summary: bool = False,
+        max_summary_words: int = 150,
     ) -> Dict[str, Any]:
         """Transcribe a specific audio file."""
         start_time = time.time()
@@ -154,6 +166,63 @@ class TranscriptionService:
                                 },
                             )
 
+                # Generate summary if requested
+                summary = None
+                summary_processing_time = None
+
+                if include_summary:
+                    summary_start_time = time.time()
+                    transcription_text = result.get("text", "").strip()
+
+                    if transcription_text:
+                        try:
+                            # Check if Ollama service is available
+                            if await ollama_service.health_check():
+                                logger.info(
+                                    "Generating summary for transcription",
+                                    extra={
+                                        "upload_id": upload_id,
+                                        "text_length": len(transcription_text),
+                                        "max_words": max_summary_words,
+                                    },
+                                )
+                                summary = await ollama_service.generate_summary(
+                                    transcription_text, max_summary_words
+                                )
+                                summary_processing_time = round(
+                                    time.time() - summary_start_time, 2
+                                )
+                                logger.info(
+                                    "Summary generated successfully",
+                                    extra={
+                                        "upload_id": upload_id,
+                                        "summary_length": len(summary)
+                                        if summary
+                                        else 0,
+                                        "summary_time": summary_processing_time,
+                                    },
+                                )
+                            else:
+                                logger.warning(
+                                    "Ollama service unavailable, skipping summary generation",
+                                    extra={"upload_id": upload_id},
+                                )
+                                summary = None
+                        except Exception as e:
+                            logger.warning(
+                                "Failed to generate summary, continuing without it",
+                                extra={
+                                    "upload_id": upload_id,
+                                    "error": str(e),
+                                },
+                            )
+                            summary = None
+                    else:
+                        logger.info(
+                            "No transcription text available for summarization",
+                            extra={"upload_id": upload_id},
+                        )
+
                 processing_time = time.time() - start_time
 
                 # Format response
@@ -169,6 +238,11 @@ class TranscriptionService:
                     "status": "completed",
                 }
 
+                # Add summary fields if requested (even if generation failed)
+                if include_summary:
+                    response["summary"] = summary
+                    response["summary_processing_time"] = summary_processing_time
+
                 logger.info(
                     "Transcription completed successfully",
                     extra={
@@ -176,6 +250,8 @@ class TranscriptionService:
                         "processing_time": processing_time,
                         "text_length": len(response["transcription"]["text"]),
                         "language": response["transcription"]["language"],
+                        "summary_generated": summary is not None,
+                        "summary_time": summary_processing_time,
                     },
                 )
 

@@ -149,6 +149,8 @@ async def upload_audio(
                             "confidence": 0.95,
                             "duration_seconds": 12.5,
                         },
+                        "summary": "- Project meeting scheduled for tomorrow\n- Key topics to discuss identified\n- Voice note captured for reference",
+                        "summary_processing_time": 1.2,
                         "processing_time_seconds": 2.8,
                         "status": "completed",
                     }
@@ -221,9 +223,12 @@ async def transcribe_audio(
 
     Takes an upload ID from a previous upload and transcribes the audio content.
     Uses OpenAI Whisper for local, privacy-first transcription.
+    Optionally generates AI bullet-point summaries using Ollama.
 
     - **upload_id**: ID from successful audio upload
     - **language**: Optional language hint (e.g., 'en', 'es', 'fr')
+    - **include_summary**: Generate AI summary of transcription (default: false)
+    - **max_summary_words**: Maximum words in summary, 50-300 (default: 150)
     """
     request_id = getattr(request.state, "request_id", "unknown")
     upload_id = transcription_request.upload_id
@@ -241,6 +246,8 @@ async def transcribe_audio(
     transcription_data = await transcription_service.transcribe_upload(
         upload_id=upload_id,
         language=transcription_request.language,
+        include_summary=transcription_request.include_summary,
+        max_summary_words=transcription_request.max_summary_words or 150,
     )
 
     logger.info(
@@ -251,6 +258,10 @@ async def transcribe_audio(
             "processing_time": transcription_data["processing_time_seconds"],
             "text_length": len(transcription_data["transcription"]["text"]),
             "detected_language": transcription_data["transcription"]["language"],
+            "summary_included": transcription_data.get("summary") is not None,
+            "summary_processing_time": transcription_data.get(
+                "summary_processing_time"
+            ),
         },
     )
 
