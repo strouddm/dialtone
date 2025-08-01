@@ -1,11 +1,12 @@
 """Tests for Ollama service."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-import httpx
 
-from app.services.ollama import OllamaService
+import httpx
+import pytest
+
 from app.core.exceptions import ServiceUnavailableError
+from app.services.ollama import OllamaService
 
 
 class TestOllamaService:

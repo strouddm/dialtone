@@ -1,7 +1,8 @@
 """Tests for keyword extraction integration."""
 
-import pytest
 from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 from app.services.markdown_formatter import markdown_formatter
 from app.services.transcription import transcription_service

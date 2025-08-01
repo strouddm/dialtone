@@ -1,8 +1,9 @@
 """Tests for the markdown formatter service."""
 
-import pytest
 from datetime import datetime
 from unittest.mock import patch
+
+import pytest
 
 from app.services.markdown_formatter import MarkdownFormatter, markdown_formatter
 

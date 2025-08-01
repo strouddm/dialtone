@@ -1,8 +1,9 @@
 """Integration tests for transcription API with keyword extraction."""
 
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
 from httpx import AsyncClient
-from unittest.mock import AsyncMock, Mock, patch
 
 from app.core.settings import settings
 from app.main import app
