@@ -68,6 +68,7 @@ class HealthService:
             features={
                 "audio_upload": True,  # Completed in issue #2
                 "transcription": True,  # Completed in issue #3
+                "vault_integration": True,  # Completed in issue #12
                 "summarization": False,  # Will be True after issue #9
             },
             app_name=settings.app_name,
@@ -108,6 +109,7 @@ class HealthService:
             features={
                 "audio_upload": True,
                 "transcription": True,
+                "vault_integration": True,
                 "summarization": False,
             },
             app_name=settings.app_name,

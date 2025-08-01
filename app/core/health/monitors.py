@@ -156,6 +156,48 @@ class SystemMonitor:
                 )
             )
 
+        # Add vault-specific checks
+        try:
+            from app.services.vault import vault_service
+
+            vault_status = await vault_service.get_vault_status()
+            if vault_status["accessible"]:
+                # Check disk space in vault
+                free_space = vault_status.get("free_space_gb", 0)
+                if free_space < 1.0:  # Less than 1GB free
+                    checks.append(
+                        HealthCheck(
+                            name="vault_storage",
+                            status=HealthStatus.DEGRADED,
+                            message=f"Low disk space in vault: {free_space:.1f}GB remaining",
+                        )
+                    )
+                else:
+                    checks.append(
+                        HealthCheck(
+                            name="vault_access",
+                            status=HealthStatus.HEALTHY,
+                            message="Obsidian vault accessible and writable",
+                        )
+                    )
+            else:
+                checks.append(
+                    HealthCheck(
+                        name="vault_access",
+                        status=HealthStatus.UNHEALTHY,
+                        message=f"Vault not accessible: {vault_status.get('error', 'Unknown error')}",
+                    )
+                )
+        except Exception as e:
+            logger.warning(f"Failed to check vault status: {e}")
+            checks.append(
+                HealthCheck(
+                    name="vault_access",
+                    status=HealthStatus.UNHEALTHY,
+                    message="Failed to check vault status",
+                )
+            )
+
         return checks
 
     @staticmethod
@@ -183,6 +225,20 @@ class SystemMonitor:
         except Exception as e:
             logger.warning(f"Failed to check Ollama service: {e}")
             services["ollama"] = HealthStatus.UNHEALTHY
+
+        # Check Vault service
+        try:
+            from app.services.vault import vault_service
+
+            vault_status = await vault_service.get_vault_status()
+            services["vault"] = (
+                HealthStatus.HEALTHY
+                if vault_status["accessible"]
+                else HealthStatus.UNHEALTHY
+            )
+        except Exception as e:
+            logger.warning(f"Failed to check vault service: {e}")
+            services["vault"] = HealthStatus.UNHEALTHY
 
         return services
 
