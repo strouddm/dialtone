@@ -2,9 +2,10 @@
 
 import asyncio
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 import httpx
+
 from app.core.exceptions import ServiceUnavailableError
 from app.core.settings import settings
 
@@ -126,7 +127,7 @@ class OllamaService:
         max_words = max(50, min(300, max_words))
 
         # Create bullet-point specific summarization prompt
-        prompt = f"""Create a concise bullet-point summary of the following transcription. 
+        prompt = f"""Create a concise bullet-point summary of the following transcription.
 Focus on key points, decisions, and action items:
 
 - Use 3-5 bullet points maximum
@@ -140,7 +141,6 @@ Transcription: {text.strip()}
 Summary:"""
 
         retry_count = 0
-        last_error = None
 
         while retry_count < self.max_retries:
             try:
@@ -179,18 +179,14 @@ Summary:"""
                     logger.error(
                         f"Ollama API error: {response.status_code} - {response.text}"
                     )
-                    last_error = f"API error: {response.status_code}"
 
             except httpx.TimeoutException:
-                last_error = "Request timeout"
                 logger.warning(f"Ollama request timeout (attempt {retry_count + 1})")
             except httpx.ConnectError:
-                last_error = "Connection error"
                 logger.warning(
                     f"Cannot connect to Ollama service (attempt {retry_count + 1})"
                 )
             except Exception as e:
-                last_error = str(e)
                 logger.error(
                     f"Unexpected error calling Ollama (attempt {retry_count + 1}): {e}"
                 )
@@ -226,7 +222,7 @@ Summary:"""
             return []
 
         # Create keyword extraction prompt
-        prompt = f"""Extract {max_keywords} key words or short phrases from the following text. 
+        prompt = f"""Extract {max_keywords} key words or short phrases from the following text.
 Return only the keywords, one per line, without numbers or bullets:
 
 Text: {text.strip()}

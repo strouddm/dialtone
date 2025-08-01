@@ -171,13 +171,15 @@ class SystemMonitor:
         # Check Ollama service
         try:
             from app.services.ollama import ollama_service
-            
+
             if not ollama_service.enabled:
                 services["ollama"] = HealthStatus.DEGRADED
             else:
                 # Check if Ollama is responsive
                 is_healthy = await ollama_service.health_check()
-                services["ollama"] = HealthStatus.HEALTHY if is_healthy else HealthStatus.UNHEALTHY
+                services["ollama"] = (
+                    HealthStatus.HEALTHY if is_healthy else HealthStatus.UNHEALTHY
+                )
         except Exception as e:
             logger.warning(f"Failed to check Ollama service: {e}")
             services["ollama"] = HealthStatus.UNHEALTHY

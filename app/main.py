@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if settings.ollama_enabled:
         try:
             from app.services.ollama import ollama_service
-            
+
             logger.info("Initializing Ollama service")
             # Check if service is accessible
             if await ollama_service.health_check():
@@ -54,12 +54,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 # Try to ensure model is loaded (non-blocking)
                 try:
                     await ollama_service.ensure_model_loaded()
-                    logger.info(f"Ollama model {settings.ollama_model} loaded successfully")
+                    logger.info(
+                        f"Ollama model {settings.ollama_model} loaded successfully"
+                    )
                 except Exception as e:
                     logger.warning(f"Could not pre-load Ollama model: {e}")
             else:
-                logger.warning("Ollama service is not accessible - will retry on first request")
-                
+                logger.warning(
+                    "Ollama service is not accessible - will retry on first request"
+                )
+
         except Exception as e:
             logger.error(f"Failed to initialize Ollama service: {e}")
 
@@ -67,11 +71,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Shutdown
     logger.info("Shutting down Dialtone API")
-    
+
     # Clean up Ollama service
     if settings.ollama_enabled:
         try:
             from app.services.ollama import ollama_service
+
             await ollama_service.close()
             logger.info("Ollama service connection closed")
         except Exception as e:

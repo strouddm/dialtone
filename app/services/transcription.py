@@ -10,8 +10,8 @@ from fastapi import HTTPException, status
 
 from app.core.settings import settings
 from app.services.audio_converter import audio_converter
-from app.services.whisper_model import whisper_manager
 from app.services.ollama import ollama_service
+from app.services.whisper_model import whisper_manager
 
 logger = logging.getLogger(__name__)
 
