@@ -111,6 +111,19 @@ class ServiceUnavailableError(ServiceError):
         self.status_code = 503
 
 
+class NotFoundError(VoiceNotesError):
+    """404-level errors for missing resources."""
+
+    def __init__(
+        self,
+        message: str,
+        error_code: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Initialize not found error with 404 status."""
+        super().__init__(message, 404, error_code, details)
+
+
 class VaultError(VoiceNotesError):
     """Base exception for vault operations."""
 

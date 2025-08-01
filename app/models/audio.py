@@ -45,6 +45,9 @@ class TranscriptionRequest(BaseModel):
     max_summary_words: Optional[int] = Field(
         default=150, ge=50, le=300, description="Maximum words in summary (50-300)"
     )
+    session_id: Optional[str] = Field(
+        None, description="Optional session ID to save transcription results"
+    )
 
 
 class TranscriptionData(BaseModel):
