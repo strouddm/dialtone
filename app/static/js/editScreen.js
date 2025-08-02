@@ -205,14 +205,25 @@ class EditScreen {
         this.currentData.keywords.forEach((keyword, index) => {
             const keywordElement = document.createElement('div');
             keywordElement.className = 'keyword-tag';
-            keywordElement.innerHTML = `
-                <span class="keyword-text">${keyword}</span>
-                <button class="remove-keyword" data-index="${index}" type="button" aria-label="Remove keyword">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
+            
+            // Create elements safely to prevent XSS
+            const textSpan = document.createElement('span');
+            textSpan.className = 'keyword-text';
+            textSpan.textContent = keyword; // Use textContent to prevent XSS
+            
+            const removeButton = document.createElement('button');
+            removeButton.className = 'remove-keyword';
+            removeButton.setAttribute('data-index', index);
+            removeButton.setAttribute('type', 'button');
+            removeButton.setAttribute('aria-label', 'Remove keyword');
+            removeButton.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
             `;
+            
+            keywordElement.appendChild(textSpan);
+            keywordElement.appendChild(removeButton);
             this.keywordsContainer.appendChild(keywordElement);
         });
     }
@@ -369,13 +380,23 @@ class EditScreen {
             
             const data = await response.json();
             
-            previewElement.innerHTML = `<pre class="markdown-preview">${data.markdown}</pre>`;
+            // Safely display markdown content to prevent XSS
+            const preEl = document.createElement('pre');
+            preEl.className = 'markdown-preview';
+            preEl.textContent = data.markdown; // Use textContent to prevent XSS
+            previewElement.innerHTML = '';
+            previewElement.appendChild(preEl);
+            
             statsElement.innerHTML = `
                 <span>${data.character_count} characters</span>
                 <span>${data.word_count} words</span>
             `;
         } catch (error) {
-            previewElement.innerHTML = `<div class="preview-error">Failed to generate preview: ${error.message}</div>`;
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'preview-error';
+            errorDiv.textContent = `Failed to generate preview: ${error.message}`; // Safe error display
+            previewElement.innerHTML = '';
+            previewElement.appendChild(errorDiv);
             statsElement.innerHTML = '';
         }
     }

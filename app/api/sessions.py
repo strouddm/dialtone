@@ -223,9 +223,9 @@ async def preview_markdown(request: Request, session_id: str) -> dict:
             else session_state.keywords or []
         )
 
-        markdown_content = await markdown_formatter.format_note(
-            transcription=transcription_text,
-            summary=summary_data,
+        markdown_content = markdown_formatter.format_transcription(
+            transcription_text=transcription_text,
+            summary="\n".join(summary_data) if summary_data else None,
             keywords=keywords_data,
             metadata={
                 "created_at": session_state.created_at.isoformat(),
