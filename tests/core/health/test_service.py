@@ -176,8 +176,9 @@ class TestHealthService:
 
     async def test_uptime_calculation(self, health_service):
         """Test uptime calculation in health response."""
-        with patch("app.core.health.service._start_time", 1000.0), patch(
-            "time.time", return_value=1060.0
+        with (
+            patch("app.core.health.service._start_time", 1000.0),
+            patch("time.time", return_value=1060.0),
         ):  # 60 seconds later
             with patch.object(health_service, "_perform_health_checks") as mock_perform:
                 # Create a minimal mock response to avoid complex setup

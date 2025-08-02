@@ -1,4 +1,5 @@
 """Exception handlers for FastAPI application."""
+
 import logging
 
 from fastapi import Request, status

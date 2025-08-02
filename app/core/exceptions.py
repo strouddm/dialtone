@@ -1,4 +1,5 @@
 """Custom exception hierarchy for the voice notes application."""
+
 from typing import Any, Dict, Optional
 
 

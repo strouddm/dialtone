@@ -185,9 +185,9 @@ class AudioConverter:
                 "codec": stream.get("codec_name", "unknown"),
                 "sample_rate": int(stream.get("sample_rate", 0)),
                 "channels": int(stream.get("channels", 0)),
-                "bit_rate": int(stream.get("bit_rate", 0))
-                if stream.get("bit_rate")
-                else None,
+                "bit_rate": (
+                    int(stream.get("bit_rate", 0)) if stream.get("bit_rate") else None
+                ),
             }
 
         except Exception as e:

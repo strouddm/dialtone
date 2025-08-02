@@ -29,7 +29,7 @@ class SessionStorage:
 
     def _get_session_path(self, session_id: str) -> Path:
         """Get file path for session."""
-        return self.storage_dir / f"{session_id}.json"
+        return Path(self.storage_dir / f"{session_id}.json")
 
     async def _get_lock(self, session_id: str) -> asyncio.Lock:
         """Get or create lock for session."""

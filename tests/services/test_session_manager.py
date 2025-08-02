@@ -1,14 +1,15 @@
 """Tests for session manager service."""
 
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 from app.models.session import SessionState, SessionStatus
 from app.services.session_manager import (
+    SessionExpiredError,
     SessionManager,
     SessionNotFoundError,
-    SessionExpiredError,
 )
 
 
@@ -34,9 +35,9 @@ class TestSessionManager:
         # Mock storage to return session
         mock_session = SessionState()
         mock_storage.create_session.return_value = mock_session
-        
+
         session_id = await session_manager.create_session()
-        
+
         assert session_id == mock_session.session_id
         mock_storage.create_session.assert_called_once()
 
@@ -49,9 +50,9 @@ class TestSessionManager:
             expires_at=datetime.utcnow() + timedelta(hours=1),
         )
         mock_storage.get_session.return_value = mock_session
-        
+
         result = await session_manager.get_session_state(session_id)
-        
+
         assert result == mock_session
         mock_storage.get_session.assert_called_once_with(session_id)
 
@@ -60,7 +61,7 @@ class TestSessionManager:
         """Test getting non-existent session."""
         session_id = "nonexistent_session"
         mock_storage.get_session.return_value = None
-        
+
         with pytest.raises(SessionNotFoundError):
             await session_manager.get_session_state(session_id)
 
@@ -73,10 +74,10 @@ class TestSessionManager:
             expires_at=datetime.utcnow() - timedelta(hours=1),
         )
         mock_storage.get_session.return_value = mock_session
-        
+
         with pytest.raises(SessionExpiredError):
             await session_manager.get_session_state(session_id)
-        
+
         # Should have updated session status to expired
         mock_storage.save_session.assert_called_once()
         assert mock_session.status == SessionStatus.EXPIRED
@@ -90,14 +91,14 @@ class TestSessionManager:
             expires_at=datetime.utcnow() + timedelta(hours=1),
         )
         mock_storage.get_session.return_value = mock_session
-        
+
         # Update session
         result = await session_manager.update_session_data(
             session_id,
             status=SessionStatus.PROCESSING,
             summary="Test summary",
         )
-        
+
         assert result.status == SessionStatus.PROCESSING
         assert result.summary == "Test summary"
         mock_storage.save_session.assert_called_once_with(mock_session)
@@ -111,7 +112,7 @@ class TestSessionManager:
             expires_at=datetime.utcnow() + timedelta(hours=1),
         )
         mock_storage.get_session.return_value = mock_session
-        
+
         result = await session_manager.validate_session(session_id)
         assert result is True
 
@@ -119,7 +120,7 @@ class TestSessionManager:
     async def test_validate_session_invalid(self, session_manager, mock_storage):
         """Test validating invalid session."""
         mock_storage.get_session.return_value = None
-        
+
         result = await session_manager.validate_session("invalid_session")
         assert result is False
 
@@ -129,9 +130,9 @@ class TestSessionManager:
         expired_sessions = ["session1", "session2", "session3"]
         mock_storage.list_expired_sessions.return_value = expired_sessions
         mock_storage.delete_session.return_value = True
-        
+
         cleanup_count = await session_manager.cleanup_expired_sessions()
-        
+
         assert cleanup_count == 3
         assert mock_storage.delete_session.call_count == 3
 
@@ -140,17 +141,17 @@ class TestSessionManager:
         """Test cleanup with some failures."""
         expired_sessions = ["session1", "session2", "session3"]
         mock_storage.list_expired_sessions.return_value = expired_sessions
-        
+
         # Mock some deletions to fail
         def delete_side_effect(session_id):
             if session_id == "session2":
                 raise Exception("Delete failed")
             return True
-        
+
         mock_storage.delete_session.side_effect = delete_side_effect
-        
+
         cleanup_count = await session_manager.cleanup_expired_sessions()
-        
+
         assert cleanup_count == 2  # Only 2 successful deletions
 
     @pytest.mark.asyncio
@@ -163,9 +164,9 @@ class TestSessionManager:
             expires_at=original_expires,
         )
         mock_storage.get_session.return_value = mock_session
-        
+
         result = await session_manager.extend_session(session_id, hours=2)
-        
+
         assert result.expires_at > original_expires
         mock_storage.save_session.assert_called_once()
 
@@ -178,7 +179,7 @@ class TestSessionManager:
             expires_at=datetime.utcnow() + timedelta(hours=1),
         )
         mock_storage.get_session.return_value = mock_session
-        
+
         # Update with None values (should be ignored)
         await session_manager.update_session_data(
             session_id,
@@ -186,13 +187,15 @@ class TestSessionManager:
             summary=None,  # Should be ignored
             keywords=["test"],
         )
-        
+
         assert mock_session.status == SessionStatus.PROCESSING
         assert mock_session.summary is None  # Should remain None
         assert mock_session.keywords == ["test"]
 
     @pytest.mark.asyncio
-    async def test_update_session_data_invalid_attributes(self, session_manager, mock_storage):
+    async def test_update_session_data_invalid_attributes(
+        self, session_manager, mock_storage
+    ):
         """Test updating session with invalid attributes."""
         session_id = "test_session"
         mock_session = SessionState(
@@ -200,13 +203,13 @@ class TestSessionManager:
             expires_at=datetime.utcnow() + timedelta(hours=1),
         )
         mock_storage.get_session.return_value = mock_session
-        
+
         # Update with invalid attribute (should be ignored)
         await session_manager.update_session_data(
             session_id,
             invalid_field="should_be_ignored",
             status=SessionStatus.PROCESSING,
         )
-        
+
         assert mock_session.status == SessionStatus.PROCESSING
         assert not hasattr(mock_session, "invalid_field")

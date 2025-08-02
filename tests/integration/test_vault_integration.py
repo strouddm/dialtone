@@ -2,8 +2,8 @@
 
 import asyncio
 from pathlib import Path
-from typing import Dict, Any
-from unittest.mock import patch, AsyncMock
+from typing import Any, Dict
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import AsyncClient
@@ -243,7 +243,7 @@ class TestVaultIntegration:
         self,
         async_client: AsyncClient,
         test_obsidian_vault: Path,
-        setup_test_environment: Dict[str, Any]
+        setup_test_environment: Dict[str, Any],
     ):
         """Test vault saves comply with Obsidian markdown formatting."""
         vault_response = await async_client.post(
@@ -256,24 +256,24 @@ class TestVaultIntegration:
                 "metadata": {
                     "source": "integration_test",
                     "duration": 45.2,
-                    "confidence": 0.95
-                }
-            }
+                    "confidence": 0.95,
+                },
+            },
         )
-        
+
         assert vault_response.status_code == 201
         vault_data = vault_response.json()
-        
+
         vault_file = test_obsidian_vault / vault_data["filename"]
         content = vault_file.read_text()
-        
+
         # Verify YAML frontmatter structure
         assert content.startswith("---\n")
         frontmatter_end = content.find("\n---\n", 4)
         assert frontmatter_end > 0
-        
+
         frontmatter = content[4:frontmatter_end]
-        
+
         # Verify required frontmatter fields
         assert "type: voice-note" in frontmatter
         assert "created:" in frontmatter
@@ -282,12 +282,12 @@ class TestVaultIntegration:
         assert "source: integration_test" in frontmatter
         assert "duration: 45.2" in frontmatter
         assert "confidence: 0.95" in frontmatter
-        
+
         # Verify markdown structure
-        body = content[frontmatter_end + 5:]  # Skip "---\n"
+        body = content[frontmatter_end + 5 :]  # Skip "---\n"
         assert "## Summary" in body
         assert "## Transcription" in body
-        
+
         # Verify markdown formatting is preserved
         assert "**bold**" in body
         assert "*italic*" in body
@@ -297,25 +297,19 @@ class TestVaultIntegration:
         self,
         async_client: AsyncClient,
         test_obsidian_vault: Path,
-        setup_test_environment: Dict[str, Any]
+        setup_test_environment: Dict[str, Any],
     ):
         """Test vault file naming follows Obsidian conventions."""
         # Test with various upload IDs and metadata
         test_cases = [
-            {
-                "upload_id": "simple_test",
-                "title": "Simple Test Note"
-            },
-            {
-                "upload_id": "complex_test_123",
-                "title": "Complex Test with Numbers"
-            },
+            {"upload_id": "simple_test", "title": "Simple Test Note"},
+            {"upload_id": "complex_test_123", "title": "Complex Test with Numbers"},
             {
                 "upload_id": "special_chars_test",
-                "title": "Test with Special Characters: åäö"
-            }
+                "title": "Test with Special Characters: åäö",
+            },
         ]
-        
+
         for case in test_cases:
             vault_response = await async_client.post(
                 "/api/v1/vault/save",
@@ -324,19 +318,19 @@ class TestVaultIntegration:
                     "transcription": f"Test transcription for {case['title']}",
                     "summary": f"- Summary for {case['title']}",
                     "keywords": ["test", "naming"],
-                    "metadata": {"title": case["title"]}
-                }
+                    "metadata": {"title": case["title"]},
+                },
             )
-            
+
             assert vault_response.status_code == 201
             vault_data = vault_response.json()
             filename = vault_data["filename"]
-            
+
             # Verify filename conventions
             assert filename.endswith(".md")
             assert " " not in filename  # No spaces in filenames
             assert len(filename) <= 255  # Reasonable filename length
-            
+
             # Verify file exists and is readable
             vault_file = test_obsidian_vault / filename
             assert vault_file.exists()
@@ -346,9 +340,10 @@ class TestVaultIntegration:
         self,
         async_client: AsyncClient,
         test_obsidian_vault: Path,
-        setup_test_environment: Dict[str, Any]
+        setup_test_environment: Dict[str, Any],
     ):
         """Test concurrent vault saves with potential filename collisions."""
+
         async def save_voice_note(note_id: int):
             """Save a voice note and return the result."""
             vault_response = await async_client.post(
@@ -357,28 +352,32 @@ class TestVaultIntegration:
                     "upload_id": f"collision_test_{note_id}",
                     "transcription": f"Concurrent save test {note_id}",
                     "summary": f"- Test note {note_id}",
-                    "keywords": ["concurrent", "test", f"note{note_id}"]
-                }
+                    "keywords": ["concurrent", "test", f"note{note_id}"],
+                },
             )
-            
+
             return {
                 "note_id": note_id,
                 "status_code": vault_response.status_code,
-                "filename": vault_response.json().get("filename") if vault_response.status_code == 201 else None
+                "filename": (
+                    vault_response.json().get("filename")
+                    if vault_response.status_code == 201
+                    else None
+                ),
             }
-        
+
         # Create 10 concurrent save tasks
         save_tasks = [save_voice_note(i) for i in range(10)]
         results = await asyncio.gather(*save_tasks)
-        
+
         # Verify all saves succeeded
         successful_saves = [r for r in results if r["status_code"] == 201]
         assert len(successful_saves) == 10
-        
+
         # Verify all filenames are unique (no collisions)
         filenames = [r["filename"] for r in successful_saves]
         assert len(set(filenames)) == len(filenames)  # All unique
-        
+
         # Verify all files exist
         for result in successful_saves:
             vault_file = test_obsidian_vault / result["filename"]
@@ -390,20 +389,24 @@ class TestVaultIntegration:
         self,
         async_client: AsyncClient,
         test_obsidian_vault: Path,
-        setup_test_environment: Dict[str, Any]
+        setup_test_environment: Dict[str, Any],
     ):
         """Test vault handling of large transcriptions and summaries."""
         # Create large content
-        large_transcription = " ".join([
-            f"This is sentence {i} of a very long transcription that tests the system's ability to handle large amounts of text content."
-            for i in range(200)
-        ])
-        
-        large_summary = "\n".join([
-            f"- Summary point {i} with detailed explanation and context"
-            for i in range(50)
-        ])
-        
+        large_transcription = " ".join(
+            [
+                f"This is sentence {i} of a very long transcription that tests the system's ability to handle large amounts of text content."
+                for i in range(200)
+            ]
+        )
+
+        large_summary = "\n".join(
+            [
+                f"- Summary point {i} with detailed explanation and context"
+                for i in range(50)
+            ]
+        )
+
         vault_response = await async_client.post(
             "/api/v1/vault/save",
             json={
@@ -413,24 +416,24 @@ class TestVaultIntegration:
                 "keywords": ["large", "content", "test", "performance"],
                 "metadata": {
                     "transcription_length": len(large_transcription),
-                    "summary_length": len(large_summary)
-                }
-            }
+                    "summary_length": len(large_summary),
+                },
+            },
         )
-        
+
         assert vault_response.status_code == 201
         vault_data = vault_response.json()
-        
+
         vault_file = test_obsidian_vault / vault_data["filename"]
         assert vault_file.exists()
-        
+
         content = vault_file.read_text()
-        
+
         # Verify large content is properly saved
         assert large_transcription in content
         assert large_summary in content
         assert f"transcription_length: {len(large_transcription)}" in content
-        
+
         # Verify file size is reasonable
         file_size = vault_file.stat().st_size
         assert file_size > 10000  # Should be a large file
@@ -440,7 +443,7 @@ class TestVaultIntegration:
         self,
         async_client: AsyncClient,
         test_obsidian_vault: Path,
-        setup_test_environment: Dict[str, Any]
+        setup_test_environment: Dict[str, Any],
     ):
         """Test generation of Obsidian-compatible internal links."""
         # Create a note with references
@@ -453,21 +456,21 @@ class TestVaultIntegration:
                 "keywords": ["obsidian", "links", "references", "connections"],
                 "metadata": {
                     "related_topics": ["AI", "voice processing", "note taking"]
-                }
-            }
+                },
+            },
         )
-        
+
         assert vault_response.status_code == 201
         vault_data = vault_response.json()
-        
+
         vault_file = test_obsidian_vault / vault_data["filename"]
         content = vault_file.read_text()
-        
+
         # Verify Obsidian-compatible structure
         assert "tags:" in content
         assert "- obsidian" in content
         assert "related_topics:" in content
-        
+
         # Check that content is ready for linking
         # (Obsidian will automatically detect potential links)
         assert "AI" in content
@@ -478,7 +481,7 @@ class TestVaultIntegration:
         self,
         async_client: AsyncClient,
         test_obsidian_vault: Path,
-        setup_test_environment: Dict[str, Any]
+        setup_test_environment: Dict[str, Any],
     ):
         """Test vault operations with simulated backup/recovery scenarios."""
         # Create initial notes
@@ -490,42 +493,42 @@ class TestVaultIntegration:
                     "upload_id": f"backup_test_{i}",
                     "transcription": f"Initial note {i} for backup testing",
                     "summary": f"- Backup test note {i}",
-                    "keywords": ["backup", "test", f"note{i}"]
-                }
+                    "keywords": ["backup", "test", f"note{i}"],
+                },
             )
             assert vault_response.status_code == 201
             initial_notes.append(vault_response.json())
-        
+
         # Verify all files exist
         for note in initial_notes:
             vault_file = test_obsidian_vault / note["filename"]
             assert vault_file.exists()
-        
+
         # Simulate backup by copying files
         backup_dir = test_obsidian_vault.parent / "backup"
         backup_dir.mkdir()
-        
+
         for note in initial_notes:
             source_file = test_obsidian_vault / note["filename"]
             backup_file = backup_dir / note["filename"]
             backup_file.write_text(source_file.read_text())
-        
+
         # Simulate data loss (remove original files)
         for note in initial_notes:
             vault_file = test_obsidian_vault / note["filename"]
             vault_file.unlink()
-        
+
         # Verify files are gone
         for note in initial_notes:
             vault_file = test_obsidian_vault / note["filename"]
             assert not vault_file.exists()
-        
+
         # Simulate recovery (restore from backup)
         for note in initial_notes:
             backup_file = backup_dir / note["filename"]
             restored_file = test_obsidian_vault / note["filename"]
             restored_file.write_text(backup_file.read_text())
-        
+
         # Verify recovery successful
         for note in initial_notes:
             vault_file = test_obsidian_vault / note["filename"]

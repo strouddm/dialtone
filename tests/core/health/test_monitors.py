@@ -80,10 +80,11 @@ class TestSystemMonitor:
 
     async def test_get_system_metrics_caching(self):
         """Test that system metrics are cached properly."""
-        with patch("psutil.cpu_percent", return_value=25.0) as mock_cpu, patch(
-            "psutil.virtual_memory"
-        ) as mock_memory, patch("psutil.disk_usage") as mock_disk, patch(
-            "psutil.getloadavg", return_value=[1.0, 1.0, 1.0]
+        with (
+            patch("psutil.cpu_percent", return_value=25.0) as mock_cpu,
+            patch("psutil.virtual_memory") as mock_memory,
+            patch("psutil.disk_usage") as mock_disk,
+            patch("psutil.getloadavg", return_value=[1.0, 1.0, 1.0]),
         ):
             mock_memory.return_value = Mock(
                 percent=50.0, used=8 * 1024**3, total=16 * 1024**3

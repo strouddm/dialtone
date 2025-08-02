@@ -1,4 +1,5 @@
 """Validators for request data."""
+
 import mimetypes
 from pathlib import Path
 from typing import Optional
