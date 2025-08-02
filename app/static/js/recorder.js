@@ -263,26 +263,103 @@ class AudioRecorder {
     const filename = `recording_${Date.now()}.webm`;
     formData.append('file', audioBlob, filename);
 
-    try {
-      this.updateStatus('Uploading recording...');
-      this.showProgress(true);
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      let progressIndicator = null;
+      
+      const cleanup = () => {
+        if (progressIndicator) {
+          progressIndicator.destroy();
+          progressIndicator = null;
+        }
+      };
 
-      const response = await fetch('/api/v1/audio/upload', {
-        method: 'POST',
-        body: formData
-      });
+      try {
+        this.updateStatus('Uploading recording...');
+        
+        const progressContainer = document.getElementById('progressContainer');
+        if (progressContainer) {
+          progressIndicator = new ProgressIndicator(progressContainer, {
+            showSpeed: true,
+            showETA: true,
+            cancelable: true,
+            onCancel: () => {
+              xhr.abort();
+            }
+          });
+          progressIndicator.show();
+        } else {
+          this.showProgress(true);
+        }
 
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable && progressIndicator) {
+            progressIndicator.update(event.loaded, event.total);
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const result = JSON.parse(xhr.responseText);
+              if (progressIndicator) {
+                progressIndicator.complete();
+              } else {
+                this.showProgress(false);
+              }
+              this.handleUploadSuccess(result);
+              resolve(result);
+            } catch (parseError) {
+              const error = new Error('Invalid response from server');
+              this.handleUploadError(error, progressIndicator);
+              reject(error);
+            }
+          } else {
+            const error = new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`);
+            this.handleUploadError(error, progressIndicator);
+            reject(error);
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          const error = new Error('Network error occurred during upload');
+          this.handleUploadError(error, progressIndicator);
+          reject(error);
+        });
+
+        xhr.addEventListener('abort', () => {
+          const error = new Error('Upload was cancelled');
+          this.handleUploadError(error, progressIndicator);
+          reject(error);
+        });
+
+        xhr.addEventListener('timeout', () => {
+          const error = new Error('Upload timed out');
+          this.handleUploadError(error, progressIndicator);
+          reject(error);
+        });
+
+        xhr.open('POST', '/api/v1/audio/upload');
+        xhr.timeout = 300000; // 5 minute timeout
+        xhr.send(formData);
+
+      } catch (error) {
+        this.handleUploadError(error, progressIndicator);
+        reject(error);
       }
+    });
+  }
 
-      const result = await response.json();
-      this.handleUploadSuccess(result);
-    } catch (error) {
-      this.handleError(error);
-    } finally {
+  handleUploadError(error, progressIndicator) {
+    if (progressIndicator) {
+      progressIndicator.setError(error.message);
+      setTimeout(() => {
+        progressIndicator.destroy();
+      }, 5000);
+    } else {
       this.showProgress(false);
     }
+    this.handleError(error);
   }
 
   handleUploadSuccess(result) {
