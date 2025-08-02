@@ -1,0 +1,236 @@
+name: Performance Monitoring
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      benchmark_type:
+        description: 'Type of benchmark to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - audio_processing
+        - concurrent_load
+        - memory_usage
+        - api_response
+
+env:
+  TESTING: true
+  PYTHONPATH: ${{ github.workspace }}
+  LOG_LEVEL: INFO
+
+jobs:
+  performance-benchmarks:
+    name: Daily Performance Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        lfs: true
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+    
+    - name: Create test environment
+      run: |
+        mkdir -p /tmp/test_vault
+        mkdir -p /tmp/test_uploads
+        mkdir -p /tmp/test_sessions
+    
+    - name: Run performance benchmarks
+      run: |
+        pytest tests/performance/test_benchmarks.py \
+          -m benchmark \
+          --benchmark-only \
+          --benchmark-json=daily_benchmark_results.json \
+          --benchmark-sort=mean \
+          --verbose
+      env:
+        OBSIDIAN_VAULT_PATH: /tmp/test_vault
+        UPLOAD_DIR: /tmp/test_uploads
+        SESSION_STORAGE_DIR: /tmp/test_sessions
+    
+    - name: Run load tests
+      run: |
+        pytest tests/performance/test_load_testing.py \
+          -m "load and not slow" \
+          --benchmark-json=load_test_results.json \
+          --verbose
+      env:
+        OBSIDIAN_VAULT_PATH: /tmp/test_vault
+        UPLOAD_DIR: /tmp/test_uploads
+        SESSION_STORAGE_DIR: /tmp/test_sessions
+    
+    - name: Generate performance report
+      run: |
+        python -c "
+        import json
+        from datetime import datetime
+        
+        # Load benchmark results
+        with open('daily_benchmark_results.json', 'r') as f:
+            benchmarks = json.load(f)
+        
+        # Generate report
+        report = {
+            'date': datetime.now().isoformat(),
+            'summary': {
+                'total_benchmarks': len(benchmarks.get('benchmarks', [])),
+                'machine_info': benchmarks.get('machine_info', {}),
+                'commit_info': benchmarks.get('commit_info', {})
+            },
+            'performance_metrics': []
+        }
+        
+        for bench in benchmarks.get('benchmarks', []):
+            report['performance_metrics'].append({
+                'name': bench['name'],
+                'mean': bench['stats']['mean'],
+                'min': bench['stats']['min'],
+                'max': bench['stats']['max'],
+                'stddev': bench['stats']['stddev']
+            })
+        
+        with open('performance_report.json', 'w') as f:
+            json.dump(report, f, indent=2)
+        
+        print('Performance report generated')
+        "
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: daily-performance-results
+        path: |
+          daily_benchmark_results.json
+          load_test_results.json
+          performance_report.json
+    
+    - name: Check performance regression
+      run: |
+        python -c "
+        import json
+        import sys
+        
+        # Load results and check for performance regressions
+        with open('daily_benchmark_results.json', 'r') as f:
+            results = json.load(f)
+        
+        # Performance thresholds (from PRD requirements)
+        thresholds = {
+            'test_5_minute_audio_processing_time': 35.0,  # 5-min audio in <35s
+            'test_api_response_times': 0.5,               # API response <500ms
+            'test_memory_usage_under_load': 16.0,         # Memory <16GB
+            'test_concurrent_processing_performance': 60.0 # Concurrent processing
+        }
+        
+        failed_benchmarks = []
+        
+        for bench in results.get('benchmarks', []):
+            test_name = bench['name'].split('::')[-1] if '::' in bench['name'] else bench['name']
+            mean_time = bench['stats']['mean']
+            
+            if test_name in thresholds:
+                threshold = thresholds[test_name]
+                if mean_time > threshold:
+                    failed_benchmarks.append({
+                        'test': test_name,
+                        'actual': mean_time,
+                        'threshold': threshold
+                    })
+        
+        if failed_benchmarks:
+            print('❌ Performance regression detected!')
+            for fail in failed_benchmarks:
+                print(f'  {fail[\"test\"]}: {fail[\"actual\"]:.2f}s > {fail[\"threshold\"]}s threshold')
+            sys.exit(1)
+        else:
+            print('✅ All performance benchmarks passed!')
+        "
+    
+    - name: Create issue on performance regression
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let reportContent = '## Performance Regression Detected\\n\\n';
+          reportContent += `**Date**: ${new Date().toISOString()}\\n`;
+          reportContent += `**Commit**: ${context.sha}\\n\\n`;
+          reportContent += '### Failed Benchmarks\\n\\n';
+          
+          try {
+            const results = JSON.parse(fs.readFileSync('daily_benchmark_results.json', 'utf8'));
+            // Add benchmark details to issue content
+            reportContent += 'See workflow artifacts for detailed results.\\n';
+          } catch (error) {
+            reportContent += 'Error reading benchmark results.\\n';
+          }
+          
+          reportContent += '\\n### Action Required\\n';
+          reportContent += '- Review recent changes that may have impacted performance\\n';
+          reportContent += '- Run local performance tests to reproduce\\n';
+          reportContent += '- Optimize or fix performance regression\\n';
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `Performance Regression - ${new Date().toISOString().split('T')[0]}`,
+            body: reportContent,
+            labels: ['performance', 'regression', 'priority-high']
+          });
+
+  regression-tracking:
+    name: Performance Regression Tracking
+    runs-on: ubuntu-latest
+    needs: [performance-benchmarks]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download benchmark results
+      uses: actions/download-artifact@v3
+      with:
+        name: daily-performance-results
+    
+    - name: Update performance tracking
+      run: |
+        # Create performance tracking directory if it doesn't exist
+        mkdir -p .github/performance-tracking
+        
+        # Archive today's results
+        DATE=$(date +%Y-%m-%d)
+        cp performance_report.json .github/performance-tracking/report-$DATE.json
+        
+        echo "Performance results archived for $DATE"
+    
+    - name: Commit performance tracking data
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .github/performance-tracking/
+        git diff --staged --quiet || git commit -m "Add performance tracking data for $(date +%Y-%m-%d)"
+        git push || echo "No changes to push"

@@ -1,0 +1,45 @@
+{
+  "transcription": {
+    "text": "This is a comprehensive five-minute test recording that validates the system meets performance requirements. It includes multiple topics, complex sentence structures, and various speaking patterns to thoroughly test transcription accuracy. The content covers different subjects including technology, business processes, and user experience considerations. This extended recording helps verify that the system can handle realistic voice note scenarios where users discuss detailed topics at length. The transcription service must maintain accuracy throughout the entire duration while processing within the required time constraints.",
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 8.5,
+        "text": "This is a comprehensive five-minute test recording that validates the system meets performance requirements."
+      },
+      {
+        "start": 8.5,
+        "end": 18.2,
+        "text": "It includes multiple topics, complex sentence structures, and various speaking patterns to thoroughly test transcription accuracy."
+      },
+      {
+        "start": 18.2,
+        "end": 28.7,
+        "text": "The content covers different subjects including technology, business processes, and user experience considerations."
+      },
+      {
+        "start": 28.7,
+        "end": 40.1,
+        "text": "This extended recording helps verify that the system can handle realistic voice note scenarios where users discuss detailed topics at length."
+      },
+      {
+        "start": 40.1,
+        "end": 52.3,
+        "text": "The transcription service must maintain accuracy throughout the entire duration while processing within the required time constraints."
+      }
+    ],
+    "language": "en",
+    "language_probability": 0.96
+  },
+  "summary": {
+    "summary": "- Comprehensive five-minute performance validation recording\n- Tests system performance requirement compliance\n- Includes multiple topics and complex sentence structures\n- Covers technology, business processes, and user experience\n- Validates realistic voice note scenarios\n- Ensures accuracy maintenance throughout full duration\n- Verifies processing within required time constraints",
+    "keywords": ["performance", "validation", "comprehensive", "requirements", "accuracy"]
+  },
+  "metadata": {
+    "duration": 300,
+    "format": "mp3",
+    "use_case": "performance_benchmarks",
+    "quality": "high",
+    "performance_target": "under_35_seconds"
+  }
+}

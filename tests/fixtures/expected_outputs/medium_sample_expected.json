@@ -1,0 +1,34 @@
+{
+  "transcription": {
+    "text": "This is a medium-length test recording that includes multiple sentences and paragraphs. It tests the system's ability to handle longer content with proper punctuation and structure. The recording demonstrates various speech patterns and validates comprehensive transcription capabilities across different content types.",
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 6.2,
+        "text": "This is a medium-length test recording that includes multiple sentences and paragraphs."
+      },
+      {
+        "start": 6.2,
+        "end": 12.8,
+        "text": "It tests the system's ability to handle longer content with proper punctuation and structure."
+      },
+      {
+        "start": 12.8,
+        "end": 20.4,
+        "text": "The recording demonstrates various speech patterns and validates comprehensive transcription capabilities across different content types."
+      }
+    ],
+    "language": "en",
+    "language_probability": 0.97
+  },
+  "summary": {
+    "summary": "- Medium-length test recording with multiple sentences\n- Tests system handling of longer content\n- Validates proper punctuation and structure\n- Demonstrates various speech patterns\n- Comprehensive transcription capability assessment",
+    "keywords": ["medium", "length", "recording", "sentences", "transcription"]
+  },
+  "metadata": {
+    "duration": 120,
+    "format": "m4a",
+    "use_case": "audio_format_conversion_testing",
+    "quality": "high"
+  }
+}
