@@ -46,16 +46,20 @@ class TestStaticInterface:
         response = client.get("/static/js/recorder.js")
         
         assert response.status_code == 200
-        assert "application/javascript" in response.headers["content-type"] or \
-               "text/javascript" in response.headers["content-type"]
+        assert (
+            "application/javascript" in response.headers["content-type"]
+            or "text/javascript" in response.headers["content-type"]
+        )
 
     def test_static_js_ui_served(self, client: TestClient):
         """Test that UI JavaScript file is served correctly."""
         response = client.get("/static/js/ui.js")
         
         assert response.status_code == 200
-        assert "application/javascript" in response.headers["content-type"] or \
-               "text/javascript" in response.headers["content-type"]
+        assert (
+            "application/javascript" in response.headers["content-type"]
+            or "text/javascript" in response.headers["content-type"]
+        )
 
     def test_static_file_not_found(self, client: TestClient):
         """Test that non-existent static files return 404."""

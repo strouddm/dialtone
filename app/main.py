@@ -252,7 +252,7 @@ def create_app() -> FastAPI:
 
     # Include routers
     app.include_router(health.router)
-    app.include_router(audio.router, prefix="/api/v1")
+    app.include_router(audio.router)
     app.include_router(sessions.router)
     app.include_router(vault.router, prefix="/api/v1")
 
