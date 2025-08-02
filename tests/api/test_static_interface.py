@@ -11,22 +11,22 @@ class TestStaticInterface:
     def test_root_serves_html(self, client: TestClient):
         """Test that root endpoint serves the HTML interface."""
         response = client.get("/")
-        
+
         assert response.status_code == 200
         assert response.headers["content-type"].startswith("text/html")
 
     def test_api_info_endpoint(self, client: TestClient):
         """Test that /api endpoint returns JSON metadata."""
         response = client.get("/api")
-        
+
         assert response.status_code == 200
         assert response.headers["content-type"] == "application/json"
-        
+
         data = response.json()
         assert "name" in data
         assert "version" in data
         assert "endpoints" in data
-        
+
         # Check that all expected endpoints are listed
         endpoints = data["endpoints"]
         assert "upload" in endpoints
@@ -37,14 +37,14 @@ class TestStaticInterface:
     def test_static_css_served(self, client: TestClient):
         """Test that CSS files are served correctly."""
         response = client.get("/static/css/main.css")
-        
+
         assert response.status_code == 200
         assert "text/css" in response.headers["content-type"]
 
     def test_static_js_served(self, client: TestClient):
         """Test that JavaScript files are served correctly."""
         response = client.get("/static/js/recorder.js")
-        
+
         assert response.status_code == 200
         assert (
             "application/javascript" in response.headers["content-type"]
@@ -54,7 +54,7 @@ class TestStaticInterface:
     def test_static_js_ui_served(self, client: TestClient):
         """Test that UI JavaScript file is served correctly."""
         response = client.get("/static/js/ui.js")
-        
+
         assert response.status_code == 200
         assert (
             "application/javascript" in response.headers["content-type"]
@@ -64,52 +64,52 @@ class TestStaticInterface:
     def test_static_file_not_found(self, client: TestClient):
         """Test that non-existent static files return 404."""
         response = client.get("/static/nonexistent.js")
-        
+
         assert response.status_code == 404
 
     def test_html_contains_required_elements(self, client: TestClient):
         """Test that HTML contains required UI elements."""
         response = client.get("/")
         html_content = response.text
-        
+
         # Check for essential HTML structure
         assert "<!DOCTYPE html>" in html_content
         assert '<html lang="en">' in html_content
-        assert 'viewport' in html_content
-        assert 'Dialtone' in html_content
-        
+        assert "viewport" in html_content
+        assert "Dialtone" in html_content
+
         # Check for recording interface elements
-        assert 'record-button' in html_content
-        assert 'timer' in html_content
-        assert 'status-message' in html_content
-        
+        assert "record-button" in html_content
+        assert "timer" in html_content
+        assert "status-message" in html_content
+
         # Check for JavaScript includes
-        assert '/static/js/recorder.js' in html_content
-        assert '/static/js/ui.js' in html_content
-        
+        assert "/static/js/recorder.js" in html_content
+        assert "/static/js/ui.js" in html_content
+
         # Check for CSS include
-        assert '/static/css/main.css' in html_content
+        assert "/static/css/main.css" in html_content
 
     def test_html_mobile_optimized(self, client: TestClient):
         """Test that HTML is mobile-optimized."""
         response = client.get("/")
         html_content = response.text
-        
+
         # Check for mobile viewport
-        assert 'width=device-width' in html_content
-        assert 'user-scalable=no' in html_content
-        
+        assert "width=device-width" in html_content
+        assert "user-scalable=no" in html_content
+
         # Check for PWA meta tags
-        assert 'theme-color' in html_content
-        assert 'apple-mobile-web-app-capable' in html_content
+        assert "theme-color" in html_content
+        assert "apple-mobile-web-app-capable" in html_content
 
     def test_cors_headers_present(self, client: TestClient):
         """Test that CORS headers are present for web interface."""
         response = client.get("/")
-        
+
         # Check that response doesn't fail due to CORS issues
         assert response.status_code == 200
-        
+
         # For preflight requests
         options_response = client.options("/api/v1/audio/upload")
         assert options_response.status_code == 200
@@ -174,12 +174,12 @@ class TestInterfaceContent:
         """Test that CSS contains mobile-first styles."""
         css_file = Path("app/static/css/main.css")
         content = css_file.read_text()
-        
+
         # Check for mobile-first approach
         assert "@media (max-width:" in content
         assert "viewport" in content or "vh" in content
         assert "touch-action" in content
-        
+
         # Check for design tokens
         assert ":root" in content
         assert "--color-" in content
@@ -189,7 +189,7 @@ class TestInterfaceContent:
         """Test that recorder JS contains required functionality."""
         js_file = Path("app/static/js/recorder.js")
         content = js_file.read_text()
-        
+
         # Check for AudioRecorder class
         assert "class AudioRecorder" in content
         assert "MediaRecorder" in content
@@ -201,7 +201,7 @@ class TestInterfaceContent:
         """Test that UI JS contains required functionality."""
         js_file = Path("app/static/js/ui.js")
         content = js_file.read_text()
-        
+
         # Check for RecorderUI class
         assert "class RecorderUI" in content
         assert "DOMContentLoaded" in content
@@ -212,16 +212,16 @@ class TestInterfaceContent:
         """Test that HTML includes accessibility features."""
         html_file = Path("app/static/index.html")
         content = html_file.read_text()
-        
+
         # Check for ARIA attributes
         assert "aria-label" in content
         assert "aria-live" in content
         assert "role=" in content
-        
+
         # Check for semantic HTML
         assert "<main" in content
         assert "<section" in content
         assert "<header" in content
-        
+
         # Check for screen reader support
         assert "visually-hidden" in content or "sr-only" in content

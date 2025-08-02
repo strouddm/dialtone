@@ -36,11 +36,11 @@ class TestSessionAPI:
 
     def test_create_session_success(self, client, mock_session_manager):
         """Test successful session creation."""
-        # Mock session manager
+        # Mock session manager - use AsyncMock for async methods
         test_session_id = "test_session_123"
         mock_session = SessionState(session_id=test_session_id)
-        mock_session_manager.create_session.return_value = test_session_id
-        mock_session_manager.get_session_state.return_value = mock_session
+        mock_session_manager.create_session = AsyncMock(return_value=test_session_id)
+        mock_session_manager.get_session_state = AsyncMock(return_value=mock_session)
 
         response = client.post("/api/v1/sessions/")
 
