@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 
 from app.models.common import SuccessResponse
 from app.models.session import (
+    DraftData,
     SessionCreateRequest,
     SessionResponse,
     SessionUpdateRequest,
@@ -151,3 +152,94 @@ async def get_session_status(request: Request, session_id: str) -> dict:
         "status": session_state.status,
         "expires_at": session_state.expires_at.isoformat(),
     }
+
+
+@router.patch(
+    "/{session_id}/draft",
+    response_model=SessionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update session draft",
+    description="Update draft data for editing session",
+)
+async def update_draft(
+    request: Request, session_id: str, draft: DraftData
+) -> SessionResponse:
+    """Update session draft data."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    logger.info(
+        "Draft update requested",
+        extra={"request_id": request_id, "session_id": session_id},
+    )
+
+    try:
+        session_state = await session_manager.update_session_data(
+            session_id, draft=draft
+        )
+        return SessionResponse(**session_state.model_dump())
+    except SessionNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except SessionExpiredError as e:
+        raise HTTPException(status_code=410, detail=str(e))
+
+
+@router.get(
+    "/{session_id}/preview",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    summary="Preview session markdown",
+    description="Generate markdown preview from current session data",
+)
+async def preview_markdown(request: Request, session_id: str) -> dict:
+    """Generate markdown preview from session data."""
+    request_id = getattr(request.state, "request_id", "unknown")
+
+    logger.info(
+        "Markdown preview requested",
+        extra={"request_id": request_id, "session_id": session_id},
+    )
+
+    try:
+        from app.services.markdown_formatter import markdown_formatter
+
+        session_state = await session_manager.get_session_state(session_id)
+
+        # Use draft data if available, otherwise use original data
+        transcription_text = (
+            session_state.draft.transcription
+            if session_state.draft and session_state.draft.transcription
+            else session_state.transcription.text if session_state.transcription else ""
+        )
+
+        summary_data = (
+            session_state.draft.summary
+            if session_state.draft and session_state.draft.summary
+            else session_state.summary.split("\n") if session_state.summary else []
+        )
+
+        keywords_data = (
+            session_state.draft.keywords
+            if session_state.draft and session_state.draft.keywords
+            else session_state.keywords or []
+        )
+
+        markdown_content = await markdown_formatter.format_note(
+            transcription=transcription_text,
+            summary=summary_data,
+            keywords=keywords_data,
+            metadata={
+                "created_at": session_state.created_at.isoformat(),
+                "session_id": session_id,
+            },
+        )
+
+        return {
+            "session_id": session_id,
+            "markdown": markdown_content,
+            "character_count": len(markdown_content),
+            "word_count": len(markdown_content.split()),
+        }
+    except SessionNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except SessionExpiredError as e:
+        raise HTTPException(status_code=410, detail=str(e))
