@@ -7,6 +7,8 @@ from typing import Any, AsyncGenerator, Dict
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import __version__
@@ -152,6 +154,9 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Mount static files for the web interface
+    app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
     # Add custom middleware
     app.add_middleware(RequestIDMiddleware)
     app.add_middleware(LoggingMiddleware)
@@ -168,9 +173,33 @@ def create_app() -> FastAPI:
     )
     app.add_exception_handler(Exception, general_exception_handler)
 
-    # Root endpoint
+    # Root endpoint - serve the recording interface
     @app.get(
         "/",
+        response_class=FileResponse,
+        summary="Recording Interface",
+        description="Serve the HTML recording interface for voice notes",
+        response_description="HTML recording interface",
+        responses={
+            200: {
+                "description": "Recording interface served successfully",
+                "content": {"text/html": {"example": "<!DOCTYPE html>..."}},
+            }
+        },
+    )
+    async def root():
+        """
+        Serve the main recording interface.
+
+        Returns the HTML interface for recording voice notes directly in the browser.
+        This is a mobile-optimized Progressive Web App interface that allows users
+        to record audio and upload it for transcription and processing.
+        """
+        return FileResponse("app/static/index.html")
+
+    # API info endpoint for programmatic access
+    @app.get(
+        "/api",
         response_model=Dict[str, Any],
         summary="API Information",
         description="Get basic information about the Dialtone API, "
@@ -197,7 +226,7 @@ def create_app() -> FastAPI:
             }
         },
     )
-    async def root():
+    async def api_info():
         """
         Get API information and navigation links.
 
@@ -223,7 +252,7 @@ def create_app() -> FastAPI:
 
     # Include routers
     app.include_router(health.router)
-    app.include_router(audio.router, prefix="/api/v1")
+    app.include_router(audio.router)
     app.include_router(sessions.router)
     app.include_router(vault.router, prefix="/api/v1")
 

@@ -11,9 +11,9 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_root_endpoint():
-    """Test root endpoint returns API information."""
-    response = client.get("/")
+def test_api_endpoint():
+    """Test API info endpoint returns metadata."""
+    response = client.get("/api")
     assert response.status_code == 200
 
     data = response.json()

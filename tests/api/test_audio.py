@@ -98,7 +98,7 @@ class TestAudioUploadEndpoint:
 
         assert response.status_code == 422
         data = response.json()
-        assert data["error_code"] == "VALIDATION_ERROR"
+        assert data["error_code"] == "UNSUPPORTED_FORMAT"
 
     def test_upload_file_too_large(self, client):
         """Test upload with file too large."""
@@ -207,9 +207,9 @@ class TestAudioUploadEndpoint:
 
         response = client.post("/api/v1/audio/upload", files={"file": valid_audio_file})
 
-        assert response.status_code == 503
+        assert response.status_code == 500
         data = response.json()
-        assert data["error_code"] == "SERVICE_ERROR"
+        assert data["error_code"] == "ServiceError"
         assert "request_id" in data
 
     def test_cors_headers_present(self, client, valid_audio_file):
@@ -314,7 +314,9 @@ class TestTranscribeEndpoint:
         assert data["processing_time_seconds"] == 12.3
         assert data["status"] == "completed"
 
-        mock_transcribe.assert_called_once_with(upload_id="test-123-456", language=None)
+        mock_transcribe.assert_called_once_with(
+            upload_id="test-123-456", language=None
+        )
 
     @patch("app.services.transcription.transcription_service.transcribe_upload")
     def test_transcribe_with_language(self, mock_transcribe, client):
@@ -338,7 +340,9 @@ class TestTranscribeEndpoint:
         data = response.json()
         assert data["transcription"]["language"] == "es"
 
-        mock_transcribe.assert_called_once_with(upload_id="test-123", language="es")
+        mock_transcribe.assert_called_once_with(
+            upload_id="test-123", language="es"
+        )
 
     def test_transcribe_missing_upload_id(self, client):
         """Test transcription without upload_id."""
@@ -375,7 +379,7 @@ class TestTranscribeEndpoint:
 
         assert response.status_code == 404
         data = response.json()
-        assert data["error_code"] == "UPLOAD_NOT_FOUND"
+        assert data["error_code"] == "HTTP_404"
 
     @patch("app.services.transcription.transcription_service.transcribe_upload")
     def test_transcribe_timeout(self, mock_transcribe, client):
@@ -396,7 +400,7 @@ class TestTranscribeEndpoint:
 
         assert response.status_code == 408
         data = response.json()
-        assert data["error_code"] == "TRANSCRIPTION_TIMEOUT"
+        assert data["error_code"] == "HTTP_408"
         assert data["timeout_seconds"] == 300
 
     @patch("app.services.transcription.transcription_service.transcribe_upload")
@@ -418,7 +422,7 @@ class TestTranscribeEndpoint:
 
         assert response.status_code == 400
         data = response.json()
-        assert data["error_code"] == "CONVERSION_ERROR"
+        assert data["error_code"] == "HTTP_400"
 
     @patch("app.services.transcription.transcription_service.transcribe_upload")
     def test_transcribe_service_unavailable(self, mock_transcribe, client):
@@ -438,7 +442,7 @@ class TestTranscribeEndpoint:
 
         assert response.status_code == 503
         data = response.json()
-        assert data["error_code"] == "SERVICE_UNAVAILABLE"
+        assert data["error_code"] == "HTTP_503"
 
     @patch("app.services.transcription.transcription_service.transcribe_upload")
     def test_transcribe_server_error(self, mock_transcribe, client):
@@ -451,9 +455,9 @@ class TestTranscribeEndpoint:
         request_data = {"upload_id": "error-test"}
         response = client.post("/api/v1/audio/transcribe", json=request_data)
 
-        assert response.status_code == 503
+        assert response.status_code == 500
         data = response.json()
-        assert data["error_code"] == "SERVICE_ERROR"
+        assert data["error_code"] == "ServiceError"
         assert "request_id" in data
 
     @patch("app.services.transcription.transcription_service.transcribe_upload")

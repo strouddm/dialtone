@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#7c3aed">
+    <meta name="description" content="Dialtone - Record voice notes directly to your Obsidian vault">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Dialtone - Voice Notes</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <main class="recorder-container">
+        <header class="app-header">
+            <h1 class="app-title">Dialtone</h1>
+            <div class="connection-status" role="status" aria-live="polite">
+                <span class="status-indicator"></span>
+                <span class="status-text">Ready</span>
+            </div>
+        </header>
+        
+        <section class="recording-area" aria-labelledby="recording-heading">
+            <h2 id="recording-heading" class="visually-hidden">Recording Controls</h2>
+            
+            <div class="timer-container">
+                <div class="timer" role="timer" aria-live="polite" aria-atomic="true">00:00</div>
+                <div class="audio-visualizer" aria-hidden="true">
+                    <canvas id="visualizer" width="300" height="60"></canvas>
+                </div>
+            </div>
+            
+            <div class="record-controls">
+                <button class="record-button" id="recordButton" type="button" aria-label="Start recording" aria-pressed="false">
+                    <svg class="record-icon" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="20" r="20" fill="currentColor"/>
+                    </svg>
+                    <span class="record-text">Record</span>
+                </button>
+                
+                <div class="secondary-controls" hidden>
+                    <button class="control-button pause-button" id="pauseButton" type="button" aria-label="Pause recording">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
+                            <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
+                        </svg>
+                        <span>Pause</span>
+                    </button>
+                    <button class="control-button stop-button" id="stopButton" type="button" aria-label="Stop recording">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="4" y="4" width="16" height="16" fill="currentColor"/>
+                        </svg>
+                        <span>Stop</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <section class="status-section" aria-live="polite" aria-atomic="true">
+            <p class="status-message" id="statusMessage">Tap the button to start recording</p>
+            <div class="progress-bar" id="progressBar" hidden>
+                <div class="progress-fill"></div>
+            </div>
+        </section>
+        
+        <noscript>
+            <div class="no-js-message">
+                <p>JavaScript is required for audio recording. Please enable JavaScript in your browser settings.</p>
+            </div>
+        </noscript>
+    </main>
+    
+    <div class="error-modal" id="errorModal" role="alertdialog" aria-labelledby="error-title" aria-describedby="error-message" hidden>
+        <div class="modal-content">
+            <h3 id="error-title" class="error-title">Recording Error</h3>
+            <p id="error-message" class="error-message"></p>
+            <button class="modal-close" id="errorClose" type="button">OK</button>
+        </div>
+    </div>
+    
+    <script src="/static/js/recorder.js" defer></script>
+    <script src="/static/js/ui.js" defer></script>
+</body>
+</html>
