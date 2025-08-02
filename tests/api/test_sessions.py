@@ -56,7 +56,7 @@ class TestSessionAPI:
             session_id=session_id,
             status=SessionStatus.PROCESSING,
         )
-        mock_session_manager.get_session_state.return_value = mock_session
+        mock_session_manager.get_session_state = AsyncMock(return_value=mock_session)
 
         response = client.get(f"/api/v1/sessions/{session_id}")
 
@@ -70,28 +70,28 @@ class TestSessionAPI:
         from app.services.session_manager import SessionNotFoundError
 
         session_id = "nonexistent_session"
-        mock_session_manager.get_session_state.side_effect = SessionNotFoundError(
-            f"Session {session_id} not found"
+        mock_session_manager.get_session_state = AsyncMock(
+            side_effect=SessionNotFoundError(f"Session {session_id} not found")
         )
 
         response = client.get(f"/api/v1/sessions/{session_id}")
 
         assert response.status_code == 404
-        assert "not found" in response.json()["detail"].lower()
+        assert "not found" in response.json()["error"].lower()
 
     def test_get_session_expired(self, client, mock_session_manager):
         """Test getting expired session."""
         from app.services.session_manager import SessionExpiredError
 
         session_id = "expired_session"
-        mock_session_manager.get_session_state.side_effect = SessionExpiredError(
-            f"Session {session_id} has expired"
+        mock_session_manager.get_session_state = AsyncMock(
+            side_effect=SessionExpiredError(f"Session {session_id} has expired")
         )
 
         response = client.get(f"/api/v1/sessions/{session_id}")
 
         assert response.status_code == 410
-        assert "expired" in response.json()["detail"].lower()
+        assert "expired" in response.json()["error"].lower()
 
     def test_update_session_success(self, client, mock_session_manager):
         """Test successful session update."""
@@ -101,7 +101,7 @@ class TestSessionAPI:
             status=SessionStatus.EDITED,
             user_edits={"notes": "Test notes"},
         )
-        mock_session_manager.update_session_data.return_value = mock_session
+        mock_session_manager.update_session_data = AsyncMock(return_value=mock_session)
 
         update_data = {
             "status": "edited",
@@ -118,7 +118,7 @@ class TestSessionAPI:
     def test_delete_session_success(self, client, mock_session_storage):
         """Test successful session deletion."""
         session_id = "test_session_123"
-        mock_session_storage.delete_session.return_value = True
+        mock_session_storage.delete_session = AsyncMock(return_value=True)
 
         response = client.delete(f"/api/v1/sessions/{session_id}")
 
@@ -130,12 +130,12 @@ class TestSessionAPI:
     def test_delete_session_not_found(self, client, mock_session_storage):
         """Test deleting non-existent session."""
         session_id = "nonexistent_session"
-        mock_session_storage.delete_session.return_value = False
+        mock_session_storage.delete_session = AsyncMock(return_value=False)
 
         response = client.delete(f"/api/v1/sessions/{session_id}")
 
         assert response.status_code == 404
-        assert "not found" in response.json()["detail"].lower()
+        assert "not found" in response.json()["error"].lower()
 
     def test_get_session_status_valid(self, client, mock_session_manager):
         """Test getting status of valid session."""
@@ -144,8 +144,8 @@ class TestSessionAPI:
             session_id=session_id,
             status=SessionStatus.TRANSCRIBED,
         )
-        mock_session_manager.validate_session.return_value = True
-        mock_session_manager.get_session_state.return_value = mock_session
+        mock_session_manager.validate_session = AsyncMock(return_value=True)
+        mock_session_manager.get_session_state = AsyncMock(return_value=mock_session)
 
         response = client.get(f"/api/v1/sessions/{session_id}/status")
 
@@ -159,7 +159,7 @@ class TestSessionAPI:
     def test_get_session_status_invalid(self, client, mock_session_manager):
         """Test getting status of invalid session."""
         session_id = "invalid_session"
-        mock_session_manager.validate_session.return_value = False
+        mock_session_manager.validate_session = AsyncMock(return_value=False)
 
         response = client.get(f"/api/v1/sessions/{session_id}/status")
 
@@ -176,7 +176,7 @@ class TestSessionAPI:
             session_id=session_id,
             status=SessionStatus.PROCESSING,
         )
-        mock_session_manager.update_session_data.return_value = mock_session
+        mock_session_manager.update_session_data = AsyncMock(return_value=mock_session)
 
         # Only update status
         update_data = {"status": "processing"}
@@ -191,8 +191,8 @@ class TestSessionAPI:
         """Test creating session with empty request body."""
         test_session_id = "test_session_123"
         mock_session = SessionState(session_id=test_session_id)
-        mock_session_manager.create_session.return_value = test_session_id
-        mock_session_manager.get_session_state.return_value = mock_session
+        mock_session_manager.create_session = AsyncMock(return_value=test_session_id)
+        mock_session_manager.get_session_state = AsyncMock(return_value=mock_session)
 
         # Send empty JSON
         response = client.post("/api/v1/sessions/", json={})
@@ -206,7 +206,9 @@ class TestSessionAPI:
         session_id = "test_session_123"
 
         # Mock storage error
-        mock_session_manager.get_session_state.side_effect = Exception("Storage error")
+        mock_session_manager.get_session_state = AsyncMock(
+            side_effect=Exception("Storage error")
+        )
 
         response = client.get(f"/api/v1/sessions/{session_id}")
 
