@@ -1,8 +1,9 @@
 """Tests for the static recording interface."""
 
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
-from pathlib import Path
 
 
 class TestStaticInterface:
