@@ -314,9 +314,7 @@ class TestTranscribeEndpoint:
         assert data["processing_time_seconds"] == 12.3
         assert data["status"] == "completed"
 
-        mock_transcribe.assert_called_once_with(
-            upload_id="test-123-456", language=None
-        )
+        mock_transcribe.assert_called_once_with(upload_id="test-123-456", language=None)
 
     @patch("app.services.transcription.transcription_service.transcribe_upload")
     def test_transcribe_with_language(self, mock_transcribe, client):
@@ -340,9 +338,7 @@ class TestTranscribeEndpoint:
         data = response.json()
         assert data["transcription"]["language"] == "es"
 
-        mock_transcribe.assert_called_once_with(
-            upload_id="test-123", language="es"
-        )
+        mock_transcribe.assert_called_once_with(upload_id="test-123", language="es")
 
     def test_transcribe_missing_upload_id(self, client):
         """Test transcription without upload_id."""
