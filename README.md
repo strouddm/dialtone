@@ -36,7 +36,24 @@ docker-compose restart
 
 ## Usage
 
-- **API Documentation**: http://localhost:8000/docs
+### Web Interface
+1. Open http://localhost:8000 in your mobile browser
+2. Tap the record button to start recording
+3. Speak your voice note (up to 50MB/5 minutes)
+4. Stop recording when finished
+5. Review and edit the transcription, summary, and keywords
+6. Save to your Obsidian vault
+
+### Edit Screen Features
+- **Transcription Editing**: Edit the AI-generated transcription with mobile-friendly text input
+- **Summary Management**: Add, edit, or remove bullet points from the AI summary
+- **Keyword Tags**: Modify extracted keywords or add your own
+- **Live Preview**: See the final markdown format before saving
+- **Auto-save**: Drafts are automatically saved every 10 seconds
+- **Session Recovery**: Resume editing after browser refresh or interruption
+
+### API Documentation
+- **Interactive Docs**: http://localhost:8000/docs
 - **Health Check**: http://localhost:8000/health
 - **View Logs**: `docker-compose logs -f`
 

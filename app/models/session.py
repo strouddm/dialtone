@@ -40,6 +40,15 @@ class TranscriptionData(BaseModel):
     processing_time_seconds: float
 
 
+class DraftData(BaseModel):
+    """Draft data for editing session."""
+
+    transcription: Optional[str] = None
+    summary: Optional[list[str]] = None
+    keywords: Optional[list[str]] = None
+    last_modified: datetime = Field(default_factory=datetime.utcnow)
+
+
 class SessionState(BaseModel):
     """Complete session state model."""
 
@@ -57,6 +66,7 @@ class SessionState(BaseModel):
     summary: Optional[str] = None
     keywords: Optional[list[str]] = None
     user_edits: Optional[Dict[str, Any]] = None
+    draft: Optional[DraftData] = None
 
     # Processing times
     transcription_time: Optional[float] = None
@@ -75,6 +85,7 @@ class SessionUpdateRequest(BaseModel):
 
     status: Optional[SessionStatus] = None
     user_edits: Optional[Dict[str, Any]] = None
+    draft: Optional[DraftData] = None
 
 
 class SessionResponse(BaseModel):
@@ -90,3 +101,4 @@ class SessionResponse(BaseModel):
     summary: Optional[str] = None
     keywords: Optional[list[str]] = None
     user_edits: Optional[Dict[str, Any]] = None
+    draft: Optional[DraftData] = None
