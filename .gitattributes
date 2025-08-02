@@ -1,0 +1,16 @@
+# Git LFS configuration for binary files
+
+# Audio test samples
+tests/fixtures/audio_samples/*.webm filter=lfs diff=lfs merge=lfs -text
+tests/fixtures/audio_samples/*.m4a filter=lfs diff=lfs merge=lfs -text
+tests/fixtures/audio_samples/*.mp3 filter=lfs diff=lfs merge=lfs -text
+tests/fixtures/audio_samples/*.wav filter=lfs diff=lfs merge=lfs -text
+tests/fixtures/audio_samples/*.flac filter=lfs diff=lfs merge=lfs -text
+
+# Model files (if any)
+*.model filter=lfs diff=lfs merge=lfs -text
+*.bin filter=lfs diff=lfs merge=lfs -text
+
+# Other large binary files
+*.zip filter=lfs diff=lfs merge=lfs -text
+*.tar.gz filter=lfs diff=lfs merge=lfs -text

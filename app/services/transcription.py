@@ -196,9 +196,9 @@ class TranscriptionService:
                                     "Summary generated successfully",
                                     extra={
                                         "upload_id": upload_id,
-                                        "summary_length": len(summary)
-                                        if summary
-                                        else 0,
+                                        "summary_length": (
+                                            len(summary) if summary else 0
+                                        ),
                                         "summary_time": summary_processing_time,
                                     },
                                 )
@@ -253,13 +253,13 @@ class TranscriptionService:
                                     "Keywords extracted successfully",
                                     extra={
                                         "upload_id": upload_id,
-                                        "keyword_count": len(keywords)
-                                        if keywords
-                                        else 0,
+                                        "keyword_count": (
+                                            len(keywords) if keywords else 0
+                                        ),
                                         "keyword_time": keyword_processing_time,
-                                        "keywords": keywords[:3]
-                                        if keywords
-                                        else [],  # Log first 3 for debugging
+                                        "keywords": (
+                                            keywords[:3] if keywords else []
+                                        ),  # Log first 3 for debugging
                                     },
                                 )
                             else:
@@ -318,9 +318,11 @@ class TranscriptionService:
                         "language": response["transcription"]["language"],
                         "summary_generated": summary is not None,
                         "summary_time": summary_processing_time,
-                        "keywords_extracted": keywords is not None and len(keywords) > 0
-                        if keywords
-                        else False,
+                        "keywords_extracted": (
+                            keywords is not None and len(keywords) > 0
+                            if keywords
+                            else False
+                        ),
                         "keyword_count": len(keywords) if keywords else 0,
                         "keyword_time": keyword_processing_time,
                     },

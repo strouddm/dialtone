@@ -359,9 +359,11 @@ async def transcribe_audio(
                 "summary_processing_time"
             ),
             "keywords_extracted": transcription_data.get("keywords") is not None,
-            "keyword_count": len(transcription_data["keywords"])
-            if transcription_data.get("keywords")
-            else 0,
+            "keyword_count": (
+                len(transcription_data["keywords"])
+                if transcription_data.get("keywords")
+                else 0
+            ),
             "keyword_processing_time": transcription_data.get(
                 "keyword_processing_time"
             ),

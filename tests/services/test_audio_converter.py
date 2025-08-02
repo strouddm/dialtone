@@ -44,9 +44,10 @@ class TestAudioConverter:
         output_dir = Path("/test/output")
         expected_output = output_dir / "converted_input.wav"
 
-        with patch.object(expected_output, "exists", return_value=True), patch.object(
-            expected_output, "stat"
-        ) as mock_stat:
+        with (
+            patch.object(expected_output, "exists", return_value=True),
+            patch.object(expected_output, "stat") as mock_stat,
+        ):
             mock_stat.return_value.st_size = 12345
 
             converter = AudioConverter()

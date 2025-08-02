@@ -1,4 +1,5 @@
 """Tests for validators."""
+
 import pytest
 
 from app.core.exceptions import FileSizeError, UnsupportedFormatError, ValidationError

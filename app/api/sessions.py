@@ -120,7 +120,9 @@ async def delete_session(request: Request, session_id: str) -> SuccessResponse:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
 
     return SuccessResponse(
-        message=f"Session {session_id} deleted successfully", request_id=request_id
+        success=True,
+        message=f"Session {session_id} deleted successfully",
+        request_id=request_id,
     )
 
 

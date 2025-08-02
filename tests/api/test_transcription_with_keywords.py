@@ -46,30 +46,33 @@ class TestTranscriptionWithKeywords:
         self, mock_transcription_result, mock_keywords, mock_summary
     ):
         """Test complete transcription pipeline including keywords."""
-        with patch.multiple(
-            "app.services.transcription",
-            whisper_manager=Mock(
-                is_loaded=True,
-                is_loading=False,
-                transcribe=AsyncMock(return_value=mock_transcription_result),
-            ),
-            audio_converter=Mock(
-                get_audio_info=AsyncMock(
-                    return_value={
-                        "duration": 15.5,
-                        "format": "webm",
-                        "sample_rate": 16000,
-                        "channels": 1,
-                    }
+        with (
+            patch.multiple(
+                "app.services.transcription",
+                whisper_manager=Mock(
+                    is_loaded=True,
+                    is_loading=False,
+                    transcribe=AsyncMock(return_value=mock_transcription_result),
                 ),
-                is_conversion_needed=Mock(return_value=False),
+                audio_converter=Mock(
+                    get_audio_info=AsyncMock(
+                        return_value={
+                            "duration": 15.5,
+                            "format": "webm",
+                            "sample_rate": 16000,
+                            "channels": 1,
+                        }
+                    ),
+                    is_conversion_needed=Mock(return_value=False),
+                ),
+                ollama_service=Mock(
+                    health_check=AsyncMock(return_value=True),
+                    generate_summary=AsyncMock(return_value=mock_summary),
+                    extract_keywords=AsyncMock(return_value=mock_keywords),
+                ),
             ),
-            ollama_service=Mock(
-                health_check=AsyncMock(return_value=True),
-                generate_summary=AsyncMock(return_value=mock_summary),
-                extract_keywords=AsyncMock(return_value=mock_keywords),
-            ),
-        ), patch("app.services.transcription.Path") as mock_path:
+            patch("app.services.transcription.Path") as mock_path,
+        ):
             # Mock file system
             mock_upload_dir = Mock()
             mock_upload_dir.exists.return_value = True
@@ -130,29 +133,32 @@ class TestTranscriptionWithKeywords:
         self, mock_transcription_result, mock_keywords
     ):
         """Test API response structure includes keyword fields."""
-        with patch.multiple(
-            "app.services.transcription",
-            whisper_manager=Mock(
-                is_loaded=True,
-                is_loading=False,
-                transcribe=AsyncMock(return_value=mock_transcription_result),
-            ),
-            audio_converter=Mock(
-                get_audio_info=AsyncMock(
-                    return_value={
-                        "duration": 10.0,
-                        "format": "webm",
-                        "sample_rate": 16000,
-                        "channels": 1,
-                    }
+        with (
+            patch.multiple(
+                "app.services.transcription",
+                whisper_manager=Mock(
+                    is_loaded=True,
+                    is_loading=False,
+                    transcribe=AsyncMock(return_value=mock_transcription_result),
                 ),
-                is_conversion_needed=Mock(return_value=False),
+                audio_converter=Mock(
+                    get_audio_info=AsyncMock(
+                        return_value={
+                            "duration": 10.0,
+                            "format": "webm",
+                            "sample_rate": 16000,
+                            "channels": 1,
+                        }
+                    ),
+                    is_conversion_needed=Mock(return_value=False),
+                ),
+                ollama_service=Mock(
+                    health_check=AsyncMock(return_value=True),
+                    extract_keywords=AsyncMock(return_value=mock_keywords),
+                ),
             ),
-            ollama_service=Mock(
-                health_check=AsyncMock(return_value=True),
-                extract_keywords=AsyncMock(return_value=mock_keywords),
-            ),
-        ), patch("app.services.transcription.Path") as mock_path:
+            patch("app.services.transcription.Path") as mock_path,
+        ):
             # Mock file system
             mock_upload_dir = Mock()
             mock_upload_dir.exists.return_value = True
@@ -203,25 +209,28 @@ class TestTranscriptionWithKeywords:
     @pytest.mark.asyncio
     async def test_keywords_disabled_via_configuration(self, mock_transcription_result):
         """Test that keywords are not included when extraction is disabled."""
-        with patch.multiple(
-            "app.services.transcription",
-            whisper_manager=Mock(
-                is_loaded=True,
-                is_loading=False,
-                transcribe=AsyncMock(return_value=mock_transcription_result),
-            ),
-            audio_converter=Mock(
-                get_audio_info=AsyncMock(
-                    return_value={
-                        "duration": 10.0,
-                        "format": "webm",
-                        "sample_rate": 16000,
-                        "channels": 1,
-                    }
+        with (
+            patch.multiple(
+                "app.services.transcription",
+                whisper_manager=Mock(
+                    is_loaded=True,
+                    is_loading=False,
+                    transcribe=AsyncMock(return_value=mock_transcription_result),
                 ),
-                is_conversion_needed=Mock(return_value=False),
+                audio_converter=Mock(
+                    get_audio_info=AsyncMock(
+                        return_value={
+                            "duration": 10.0,
+                            "format": "webm",
+                            "sample_rate": 16000,
+                            "channels": 1,
+                        }
+                    ),
+                    is_conversion_needed=Mock(return_value=False),
+                ),
             ),
-        ), patch("app.services.transcription.Path") as mock_path:
+            patch("app.services.transcription.Path") as mock_path,
+        ):
             # Mock file system
             mock_upload_dir = Mock()
             mock_upload_dir.exists.return_value = True
@@ -265,29 +274,34 @@ class TestTranscriptionWithKeywords:
         self, mock_transcription_result
     ):
         """Test API behavior when keyword extraction fails."""
-        with patch.multiple(
-            "app.services.transcription",
-            whisper_manager=Mock(
-                is_loaded=True,
-                is_loading=False,
-                transcribe=AsyncMock(return_value=mock_transcription_result),
-            ),
-            audio_converter=Mock(
-                get_audio_info=AsyncMock(
-                    return_value={
-                        "duration": 10.0,
-                        "format": "webm",
-                        "sample_rate": 16000,
-                        "channels": 1,
-                    }
+        with (
+            patch.multiple(
+                "app.services.transcription",
+                whisper_manager=Mock(
+                    is_loaded=True,
+                    is_loading=False,
+                    transcribe=AsyncMock(return_value=mock_transcription_result),
                 ),
-                is_conversion_needed=Mock(return_value=False),
+                audio_converter=Mock(
+                    get_audio_info=AsyncMock(
+                        return_value={
+                            "duration": 10.0,
+                            "format": "webm",
+                            "sample_rate": 16000,
+                            "channels": 1,
+                        }
+                    ),
+                    is_conversion_needed=Mock(return_value=False),
+                ),
+                ollama_service=Mock(
+                    health_check=AsyncMock(return_value=True),
+                    extract_keywords=AsyncMock(
+                        side_effect=Exception("Service failure")
+                    ),
+                ),
             ),
-            ollama_service=Mock(
-                health_check=AsyncMock(return_value=True),
-                extract_keywords=AsyncMock(side_effect=Exception("Service failure")),
-            ),
-        ), patch("app.services.transcription.Path") as mock_path:
+            patch("app.services.transcription.Path") as mock_path,
+        ):
             # Mock file system
             mock_upload_dir = Mock()
             mock_upload_dir.exists.return_value = True
@@ -328,31 +342,34 @@ class TestTranscriptionWithKeywords:
         """Test that keyword count configuration is properly validated."""
         mock_many_keywords = [f"keyword{i}" for i in range(15)]  # More than max allowed
 
-        with patch.multiple(
-            "app.services.transcription",
-            whisper_manager=Mock(
-                is_loaded=True,
-                is_loading=False,
-                transcribe=AsyncMock(return_value=mock_transcription_result),
-            ),
-            audio_converter=Mock(
-                get_audio_info=AsyncMock(
-                    return_value={
-                        "duration": 10.0,
-                        "format": "webm",
-                        "sample_rate": 16000,
-                        "channels": 1,
-                    }
+        with (
+            patch.multiple(
+                "app.services.transcription",
+                whisper_manager=Mock(
+                    is_loaded=True,
+                    is_loading=False,
+                    transcribe=AsyncMock(return_value=mock_transcription_result),
                 ),
-                is_conversion_needed=Mock(return_value=False),
+                audio_converter=Mock(
+                    get_audio_info=AsyncMock(
+                        return_value={
+                            "duration": 10.0,
+                            "format": "webm",
+                            "sample_rate": 16000,
+                            "channels": 1,
+                        }
+                    ),
+                    is_conversion_needed=Mock(return_value=False),
+                ),
+                ollama_service=Mock(
+                    health_check=AsyncMock(return_value=True),
+                    extract_keywords=AsyncMock(
+                        return_value=mock_many_keywords[:3]
+                    ),  # Respects limit
+                ),
             ),
-            ollama_service=Mock(
-                health_check=AsyncMock(return_value=True),
-                extract_keywords=AsyncMock(
-                    return_value=mock_many_keywords[:3]
-                ),  # Respects limit
-            ),
-        ), patch("app.services.transcription.Path") as mock_path:
+            patch("app.services.transcription.Path") as mock_path,
+        ):
             # Mock file system
             mock_upload_dir = Mock()
             mock_upload_dir.exists.return_value = True
@@ -394,29 +411,32 @@ class TestTranscriptionWithKeywords:
         self, mock_transcription_result, mock_keywords
     ):
         """Test that keyword extraction doesn't significantly impact performance."""
-        with patch.multiple(
-            "app.services.transcription",
-            whisper_manager=Mock(
-                is_loaded=True,
-                is_loading=False,
-                transcribe=AsyncMock(return_value=mock_transcription_result),
-            ),
-            audio_converter=Mock(
-                get_audio_info=AsyncMock(
-                    return_value={
-                        "duration": 10.0,
-                        "format": "webm",
-                        "sample_rate": 16000,
-                        "channels": 1,
-                    }
+        with (
+            patch.multiple(
+                "app.services.transcription",
+                whisper_manager=Mock(
+                    is_loaded=True,
+                    is_loading=False,
+                    transcribe=AsyncMock(return_value=mock_transcription_result),
                 ),
-                is_conversion_needed=Mock(return_value=False),
+                audio_converter=Mock(
+                    get_audio_info=AsyncMock(
+                        return_value={
+                            "duration": 10.0,
+                            "format": "webm",
+                            "sample_rate": 16000,
+                            "channels": 1,
+                        }
+                    ),
+                    is_conversion_needed=Mock(return_value=False),
+                ),
+                ollama_service=Mock(
+                    health_check=AsyncMock(return_value=True),
+                    extract_keywords=AsyncMock(return_value=mock_keywords),
+                ),
             ),
-            ollama_service=Mock(
-                health_check=AsyncMock(return_value=True),
-                extract_keywords=AsyncMock(return_value=mock_keywords),
-            ),
-        ), patch("app.services.transcription.Path") as mock_path:
+            patch("app.services.transcription.Path") as mock_path,
+        ):
             # Mock file system
             mock_upload_dir = Mock()
             mock_upload_dir.exists.return_value = True

@@ -1,4 +1,5 @@
 """Middleware for the application."""
+
 import time
 import uuid
 from typing import Awaitable, Callable

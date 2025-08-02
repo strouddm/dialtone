@@ -1,4 +1,5 @@
 """Tests for exception handlers."""
+
 import pytest
 from starlette.exceptions import HTTPException as StarletteHTTPException
 

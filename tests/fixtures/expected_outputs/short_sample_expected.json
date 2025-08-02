@@ -1,0 +1,29 @@
+{
+  "transcription": {
+    "text": "This is a short test recording for the voice notes system. It demonstrates basic transcription functionality.",
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 4.5,
+        "text": "This is a short test recording for the voice notes system."
+      },
+      {
+        "start": 4.5,
+        "end": 7.8,
+        "text": "It demonstrates basic transcription functionality."
+      }
+    ],
+    "language": "en",
+    "language_probability": 0.98
+  },
+  "summary": {
+    "summary": "- Short test recording for voice notes system\n- Demonstrates basic transcription functionality\n- Validates core system features",
+    "keywords": ["test", "recording", "voice", "transcription", "system"]
+  },
+  "metadata": {
+    "duration": 30,
+    "format": "webm",
+    "use_case": "quick_integration_tests",
+    "quality": "high"
+  }
+}

@@ -1,9 +1,10 @@
 """Tests for session API endpoints."""
 
-import pytest
 from datetime import datetime, timedelta
-from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, patch
+
+import pytest
+from fastapi.testclient import TestClient
 
 from app.main import create_app
 from app.models.session import SessionState, SessionStatus
@@ -40,9 +41,9 @@ class TestSessionAPI:
         mock_session = SessionState(session_id=test_session_id)
         mock_session_manager.create_session.return_value = test_session_id
         mock_session_manager.get_session_state.return_value = mock_session
-        
+
         response = client.post("/api/v1/sessions/")
-        
+
         assert response.status_code == 201
         data = response.json()
         assert data["session_id"] == test_session_id
@@ -56,9 +57,9 @@ class TestSessionAPI:
             status=SessionStatus.PROCESSING,
         )
         mock_session_manager.get_session_state.return_value = mock_session
-        
+
         response = client.get(f"/api/v1/sessions/{session_id}")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["session_id"] == session_id
@@ -67,28 +68,28 @@ class TestSessionAPI:
     def test_get_session_not_found(self, client, mock_session_manager):
         """Test getting non-existent session."""
         from app.services.session_manager import SessionNotFoundError
-        
+
         session_id = "nonexistent_session"
         mock_session_manager.get_session_state.side_effect = SessionNotFoundError(
             f"Session {session_id} not found"
         )
-        
+
         response = client.get(f"/api/v1/sessions/{session_id}")
-        
+
         assert response.status_code == 404
         assert "not found" in response.json()["detail"].lower()
 
     def test_get_session_expired(self, client, mock_session_manager):
         """Test getting expired session."""
         from app.services.session_manager import SessionExpiredError
-        
+
         session_id = "expired_session"
         mock_session_manager.get_session_state.side_effect = SessionExpiredError(
             f"Session {session_id} has expired"
         )
-        
+
         response = client.get(f"/api/v1/sessions/{session_id}")
-        
+
         assert response.status_code == 410
         assert "expired" in response.json()["detail"].lower()
 
@@ -101,14 +102,14 @@ class TestSessionAPI:
             user_edits={"notes": "Test notes"},
         )
         mock_session_manager.update_session_data.return_value = mock_session
-        
+
         update_data = {
             "status": "edited",
             "user_edits": {"notes": "Test notes"},
         }
-        
+
         response = client.put(f"/api/v1/sessions/{session_id}", json=update_data)
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "edited"
@@ -118,9 +119,9 @@ class TestSessionAPI:
         """Test successful session deletion."""
         session_id = "test_session_123"
         mock_session_storage.delete_session.return_value = True
-        
+
         response = client.delete(f"/api/v1/sessions/{session_id}")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
@@ -130,9 +131,9 @@ class TestSessionAPI:
         """Test deleting non-existent session."""
         session_id = "nonexistent_session"
         mock_session_storage.delete_session.return_value = False
-        
+
         response = client.delete(f"/api/v1/sessions/{session_id}")
-        
+
         assert response.status_code == 404
         assert "not found" in response.json()["detail"].lower()
 
@@ -145,9 +146,9 @@ class TestSessionAPI:
         )
         mock_session_manager.validate_session.return_value = True
         mock_session_manager.get_session_state.return_value = mock_session
-        
+
         response = client.get(f"/api/v1/sessions/{session_id}/status")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["session_id"] == session_id
@@ -159,9 +160,9 @@ class TestSessionAPI:
         """Test getting status of invalid session."""
         session_id = "invalid_session"
         mock_session_manager.validate_session.return_value = False
-        
+
         response = client.get(f"/api/v1/sessions/{session_id}/status")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["session_id"] == session_id
@@ -176,12 +177,12 @@ class TestSessionAPI:
             status=SessionStatus.PROCESSING,
         )
         mock_session_manager.update_session_data.return_value = mock_session
-        
+
         # Only update status
         update_data = {"status": "processing"}
-        
+
         response = client.put(f"/api/v1/sessions/{session_id}", json=update_data)
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "processing"
@@ -192,10 +193,10 @@ class TestSessionAPI:
         mock_session = SessionState(session_id=test_session_id)
         mock_session_manager.create_session.return_value = test_session_id
         mock_session_manager.get_session_state.return_value = mock_session
-        
+
         # Send empty JSON
         response = client.post("/api/v1/sessions/", json={})
-        
+
         assert response.status_code == 201
         data = response.json()
         assert data["session_id"] == test_session_id
@@ -203,11 +204,11 @@ class TestSessionAPI:
     def test_session_api_error_handling(self, client, mock_session_manager):
         """Test API error handling for session operations."""
         session_id = "test_session_123"
-        
+
         # Mock storage error
         mock_session_manager.get_session_state.side_effect = Exception("Storage error")
-        
+
         response = client.get(f"/api/v1/sessions/{session_id}")
-        
+
         # Should be handled by global exception handler
         assert response.status_code >= 400
