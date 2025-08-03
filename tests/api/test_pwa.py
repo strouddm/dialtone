@@ -11,9 +11,9 @@ class TestPWAManifest:
 
     def test_manifest_endpoint(self, client: TestClient):
         """Test manifest.json is served correctly."""
-        response = client.get("/static/manifest.json")
+        response = client.get("/manifest.json")
         assert response.status_code == 200
-        assert response.headers["content-type"] == "application/json"
+        assert response.headers["content-type"] == "application/manifest+json"
 
         manifest = response.json()
         assert manifest["name"] == "Dialtone Voice Notes"
@@ -25,7 +25,7 @@ class TestPWAManifest:
 
     def test_manifest_required_fields(self, client: TestClient):
         """Test manifest has all required PWA fields."""
-        response = client.get("/static/manifest.json")
+        response = client.get("/manifest.json")
         manifest = response.json()
 
         # Required fields for PWA
@@ -44,7 +44,7 @@ class TestPWAManifest:
 
     def test_manifest_icons(self, client: TestClient):
         """Test manifest icon configuration."""
-        response = client.get("/static/manifest.json")
+        response = client.get("/manifest.json")
         manifest = response.json()
 
         # Check we have minimum required icon sizes
@@ -60,7 +60,7 @@ class TestPWAManifest:
 
     def test_manifest_shortcuts(self, client: TestClient):
         """Test manifest app shortcuts."""
-        response = client.get("/static/manifest.json")
+        response = client.get("/manifest.json")
         manifest = response.json()
 
         assert "shortcuts" in manifest
@@ -84,7 +84,7 @@ class TestPWAIntegration:
         html = response.text
 
         # Check manifest link
-        assert '<link rel="manifest" href="/static/manifest.json">' in html
+        assert '<link rel="manifest" href="/manifest.json">' in html
 
         # Check iOS meta tags
         assert "apple-mobile-web-app-capable" in html

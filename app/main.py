@@ -197,6 +197,14 @@ def create_app() -> FastAPI:
         """
         return FileResponse("app/static/index.html")
 
+    # PWA manifest endpoint with correct MIME type
+    @app.get("/manifest.json", include_in_schema=False)
+    async def get_manifest():
+        """Serve PWA manifest with correct MIME type."""
+        return FileResponse(
+            "app/static/manifest.json", media_type="application/manifest+json"
+        )
+
     # API info endpoint for programmatic access
     @app.get(
         "/api",
