@@ -13,6 +13,8 @@ pytest-asyncio==0.23.3
 pytest-cov==4.1.0
 pytest-benchmark==4.0.0
 httpx==0.26.0  # For testing API
+selenium>=4.0.0  # For frontend/browser testing
+webdriver-manager>=3.8.0  # Automatic WebDriver management
 
 # Type stubs
 types-aiofiles==23.2.0.0
