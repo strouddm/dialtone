@@ -91,12 +91,46 @@ function handleShortcutAction() {
 // Initialize PWA features
 handleShortcutAction();
 
-// Service worker registration (for future implementation)
+// Service worker registration
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    // Service worker will be registered in issue #20
-    console.log('Service worker support detected, registration pending implementation');
+  window.addEventListener('load', async () => {
+    try {
+      const { registerServiceWorker } = await import('./sw/registration.js');
+      const registered = await registerServiceWorker();
+      
+      if (registered) {
+        console.log('Service Worker registered successfully');
+        
+        // Initialize offline functionality
+        await initializeOfflineFeatures();
+      } else {
+        console.warn('Service Worker registration failed');
+      }
+    } catch (error) {
+      console.error('Error loading service worker registration:', error);
+    }
   });
+}
+
+// Initialize offline features
+async function initializeOfflineFeatures() {
+  try {
+    // Import and initialize managers
+    const { QueueManager } = await import('./sw/queue-manager.js');
+    const { SyncManager } = await import('./sw/sync-manager.js');
+    
+    // Create instances
+    window.queueManager = new QueueManager();
+    window.syncManager = new SyncManager(window.queueManager);
+    
+    // Initialize
+    await window.queueManager.init();
+    await window.syncManager.init();
+    
+    console.log('Offline features initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize offline features:', error);
+  }
 }
 
 // Standalone mode detection
