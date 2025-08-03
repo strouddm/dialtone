@@ -11,6 +11,8 @@ services:
     volumes:
       # Mount Obsidian vault directory (update path as needed)
       - ${OBSIDIAN_VAULT_PATH:-./obsidian-vault}:/vault
+      # Mount logs directory
+      - ./logs:/app/logs
       # Mount app code for development hot-reload
       - ./app:/app/app:ro
     environment:
