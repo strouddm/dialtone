@@ -188,8 +188,8 @@ ENABLE_SSL=false
         
         for config in ssl_configs:
             if config["enable_ssl"] == "true":
-                domain_valid = bool(config["domain"]) and re.match(domain_pattern, config["domain"])
-                email_valid = bool(config["email"]) and re.match(email_pattern, config["email"])
+                domain_valid = bool(config["domain"]) and bool(re.match(domain_pattern, config["domain"]))
+                email_valid = bool(config["email"]) and bool(re.match(email_pattern, config["email"]))
                 is_valid = domain_valid and email_valid
             else:
                 is_valid = True
