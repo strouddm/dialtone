@@ -64,21 +64,26 @@ class RecorderUI {
   }
 
   async init() {
+    console.log('RecorderUI.init() called');
     try {
       this.updateConnectionStatus('connecting');
       this.updateStatus('Initializing microphone...');
       
+      console.log('Creating AudioRecorder instance...');
       this.recorder = new AudioRecorder();
+      console.log('Calling AudioRecorder.init()...');
       await this.recorder.init();
+      console.log('AudioRecorder initialized successfully');
       
       this.updateConnectionStatus('connected');
       this.updateStatus('Ready to record');
       this.setState('ready');
       
     } catch (error) {
+      console.error('RecorderUI.init() error:', error);
       this.updateConnectionStatus('error');
       this.updateStatus('Unable to access microphone');
-      this.recorder?.showError(error.message);
+      this.showError('Unable to access microphone. Please check your permissions and try again.');
     }
   }
 
@@ -257,8 +262,8 @@ class RecorderUI {
   checkConnectionStatus() {
     const checkConnection = async () => {
       try {
-        const response = await fetch('/api/v1/health', {
-          method: 'HEAD',
+        const response = await fetch('/health', {
+          method: 'GET',
           cache: 'no-cache'
         });
         
@@ -274,6 +279,16 @@ class RecorderUI {
 
     checkConnection();
     setInterval(checkConnection, 30000);
+  }
+
+  showError(message) {
+    const errorModal = this.elements.errorModal;
+    const errorMessage = document.getElementById('error-message');
+    
+    if (errorModal && errorMessage) {
+      errorMessage.textContent = message;
+      errorModal.hidden = false;
+    }
   }
 
   hideError() {

@@ -19,25 +19,48 @@ class AudioRecorder {
   }
 
   async init() {
+    console.log('AudioRecorder.init() called');
     if (!this.checkBrowserSupport()) {
+      console.error('Browser support check failed');
       throw new Error('Audio recording is not supported in this browser');
     }
+    console.log('Browser support check passed');
 
     try {
+      console.log('Requesting microphone access...');
       this.stream = await this.requestMicrophone();
+      console.log('Microphone access granted, stream:', this.stream);
+      
+      console.log('Setting up recorder...');
       this.setupRecorder();
+      console.log('Recorder setup complete');
+      
+      console.log('Setting up audio visualization...');
       this.setupAudioVisualization();
+      console.log('Audio visualization setup complete');
+      
       return true;
     } catch (error) {
+      console.error('AudioRecorder.init() error:', error.name, error.message, error);
       this.handleError(error);
       throw error;
     }
   }
 
   checkBrowserSupport() {
-    return !!(navigator.mediaDevices && 
+    console.log('Checking browser support...');
+    console.log('navigator.mediaDevices:', !!navigator.mediaDevices);
+    console.log('getUserMedia:', !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
+    console.log('MediaRecorder:', !!window.MediaRecorder);
+    console.log('HTTPS:', location.protocol === 'https:');
+    console.log('User Agent:', navigator.userAgent);
+    
+    const supported = !!(navigator.mediaDevices && 
               navigator.mediaDevices.getUserMedia && 
               window.MediaRecorder);
+              
+    console.log('Browser support result:', supported);
+    return supported;
   }
 
   async requestMicrophone() {
@@ -50,14 +73,30 @@ class AudioRecorder {
       }
     };
 
-    return await navigator.mediaDevices.getUserMedia(constraints);
+    console.log('Requesting getUserMedia with constraints:', constraints);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('getUserMedia successful, tracks:', stream.getTracks());
+      return stream;
+    } catch (error) {
+      console.error('getUserMedia failed:', error.name, error.message);
+      throw error;
+    }
   }
 
   setupRecorder() {
     const mimeType = this.getSupportedMimeType();
+    console.log('Supported MIME type:', mimeType);
     const options = mimeType ? { mimeType } : {};
     
-    this.mediaRecorder = new MediaRecorder(this.stream, options);
+    console.log('Creating MediaRecorder with options:', options);
+    try {
+      this.mediaRecorder = new MediaRecorder(this.stream, options);
+      console.log('MediaRecorder created successfully');
+    } catch (error) {
+      console.error('MediaRecorder creation failed:', error.name, error.message);
+      throw error;
+    }
     
     this.mediaRecorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
@@ -402,6 +441,9 @@ class AudioRecorder {
 
   handleError(error) {
     console.error('AudioRecorder error:', error);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     
     let userMessage = 'An error occurred while recording.';
     
@@ -411,24 +453,34 @@ class AudioRecorder {
       userMessage = 'No microphone was found. Please connect a microphone and try again.';
     } else if (error.name === 'NotSupportedError') {
       userMessage = 'Audio recording is not supported in this browser.';
+    } else if (error.name === 'SecurityError') {
+      userMessage = 'Security error: Cannot access microphone. Please ensure you are using HTTPS.';
+    } else if (error.name === 'AbortError') {
+      userMessage = 'Microphone access was aborted.';
     } else if (error.message) {
       userMessage = error.message;
     }
+    
+    // Also log browser and environment info
+    console.error('Browser info:', navigator.userAgent);
+    console.error('HTTPS:', location.protocol === 'https:');
+    console.error('MediaDevices available:', !!navigator.mediaDevices);
+    console.error('getUserMedia available:', !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
+    console.error('MediaRecorder available:', !!window.MediaRecorder);
     
     this.showError(userMessage);
     this.reset();
   }
 
   showError(message) {
+    console.error('Recording error:', message);
+    
     const errorModal = document.getElementById('errorModal');
     const errorMessage = document.getElementById('error-message');
     
     if (errorModal && errorMessage) {
       errorMessage.textContent = message;
       errorModal.hidden = false;
-      errorModal.focus();
-    } else {
-      alert(message);
     }
   }
 
