@@ -190,6 +190,7 @@ def setup_test_environment(tmp_path):
         patch.object(settings, "upload_dir", test_upload_dir),
         patch.object(settings, "session_storage_dir", test_session_dir),
         patch.object(settings, "obsidian_vault_path", test_vault_dir),
+        patch.object(settings, "rate_limiting_enabled", False),
     ):
         yield {
             "upload_dir": test_upload_dir,

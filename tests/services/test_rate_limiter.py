@@ -45,7 +45,7 @@ class TestTokenBucket:
 
         # Mock time to simulate 1 minute passing
         original_time = time.time()
-        with patch('time.time', return_value=original_time + 60):
+        with patch("time.time", return_value=original_time + 60):
             can_consume, retry_after = await bucket.can_consume(1)
             assert can_consume is True
             assert retry_after == 0.0
@@ -58,7 +58,7 @@ class TestTokenBucket:
 
         # Mock time to simulate 30 seconds passing (half a minute)
         original_time = time.time()
-        with patch('time.time', return_value=original_time + 30):
+        with patch("time.time", return_value=original_time + 30):
             can_consume, retry_after = await bucket.can_consume(1)
             assert can_consume is True  # Should have ~30 tokens refilled
 
@@ -66,7 +66,7 @@ class TestTokenBucket:
         """Test that tokens don't exceed burst size."""
         # Wait for refill
         original_time = time.time()
-        with patch('time.time', return_value=original_time + 120):  # 2 minutes
+        with patch("time.time", return_value=original_time + 120):  # 2 minutes
             # Should still only have 10 tokens max
             for _ in range(10):
                 can_consume, retry_after = await bucket.can_consume(1)
@@ -90,13 +90,14 @@ class TestTokenBucket:
     def test_is_expired(self, bucket):
         """Test bucket expiration."""
         assert not bucket.is_expired(max_idle_time=3600)
-        
+
         # Mock old last_update time
         bucket.last_update = time.time() - 7200  # 2 hours ago
         assert bucket.is_expired(max_idle_time=3600)
 
     async def test_concurrent_access(self, bucket):
         """Test thread-safe access to bucket."""
+
         async def consume_token():
             return await bucket.can_consume(1)
 
@@ -120,7 +121,7 @@ class TestRateLimiterService:
     @pytest.fixture
     def mock_settings(self):
         """Mock settings for testing."""
-        with patch('app.services.rate_limiter.settings') as mock:
+        with patch("app.services.rate_limiter.settings") as mock:
             mock.rate_limiting_enabled = True
             mock.rate_limit_requests_per_minute = 60
             mock.rate_limit_burst_size = 10
@@ -170,9 +171,7 @@ class TestRateLimiterService:
     async def test_rate_limit_check_allowed(self, rate_limiter, mock_settings):
         """Test rate limit check when requests are allowed."""
         allowed, retry_after, headers = await rate_limiter.check_rate_limit(
-            ip="192.168.1.1",
-            endpoint_path="/api/v1/health",
-            user_agent="test-agent"
+            ip="192.168.1.1", endpoint_path="/api/v1/health", user_agent="test-agent"
         )
 
         assert allowed is True
@@ -189,14 +188,14 @@ class TestRateLimiterService:
             await rate_limiter.check_rate_limit(
                 ip="192.168.1.1",
                 endpoint_path="/api/v1/audio/upload",
-                user_agent="test-agent"
+                user_agent="test-agent",
             )
 
         # Next request should be denied
         allowed, retry_after, headers = await rate_limiter.check_rate_limit(
             ip="192.168.1.1",
             endpoint_path="/api/v1/audio/upload",
-            user_agent="test-agent"
+            user_agent="test-agent",
         )
 
         assert allowed is False
@@ -209,21 +208,18 @@ class TestRateLimiterService:
         # Consume all tokens for client 1
         for _ in range(10):
             await rate_limiter.check_rate_limit(
-                ip="192.168.1.1",
-                endpoint_path="/api/v1/audio/upload"
+                ip="192.168.1.1", endpoint_path="/api/v1/audio/upload"
             )
 
         # Client 1 should be limited
         allowed, _, _ = await rate_limiter.check_rate_limit(
-            ip="192.168.1.1",
-            endpoint_path="/api/v1/audio/upload"
+            ip="192.168.1.1", endpoint_path="/api/v1/audio/upload"
         )
         assert allowed is False
 
         # Client 2 should still be allowed
         allowed, _, _ = await rate_limiter.check_rate_limit(
-            ip="192.168.1.2",
-            endpoint_path="/api/v1/audio/upload"
+            ip="192.168.1.2", endpoint_path="/api/v1/audio/upload"
         )
         assert allowed is True
 
@@ -232,32 +228,28 @@ class TestRateLimiterService:
         # Consume all tokens for upload endpoint
         for _ in range(10):
             await rate_limiter.check_rate_limit(
-                ip="192.168.1.1",
-                endpoint_path="/api/v1/audio/upload"
+                ip="192.168.1.1", endpoint_path="/api/v1/audio/upload"
             )
 
         # Upload should be limited
         allowed, _, _ = await rate_limiter.check_rate_limit(
-            ip="192.168.1.1",
-            endpoint_path="/api/v1/audio/upload"
+            ip="192.168.1.1", endpoint_path="/api/v1/audio/upload"
         )
         assert allowed is False
 
         # Health endpoint should still be allowed
         allowed, _, _ = await rate_limiter.check_rate_limit(
-            ip="192.168.1.1",
-            endpoint_path="/health"
+            ip="192.168.1.1", endpoint_path="/health"
         )
         assert allowed is True
 
     async def test_rate_limiting_disabled(self, rate_limiter):
         """Test behavior when rate limiting is disabled."""
-        with patch('app.services.rate_limiter.settings') as mock_settings:
+        with patch("app.services.rate_limiter.settings") as mock_settings:
             mock_settings.rate_limiting_enabled = False
 
             allowed, retry_after, headers = await rate_limiter.check_rate_limit(
-                ip="192.168.1.1",
-                endpoint_path="/api/v1/audio/upload"
+                ip="192.168.1.1", endpoint_path="/api/v1/audio/upload"
             )
 
             assert allowed is True
@@ -269,7 +261,7 @@ class TestRateLimiterService:
         # Create some buckets
         await rate_limiter.check_rate_limit("192.168.1.1", "/test1")
         await rate_limiter.check_rate_limit("192.168.1.2", "/test2")
-        
+
         initial_count = len(rate_limiter._buckets)
         assert initial_count > 0
 
@@ -293,7 +285,7 @@ class TestRateLimiterService:
         await rate_limiter.check_rate_limit("192.168.1.2", "/test2")
 
         stats = await rate_limiter.get_stats()
-        
+
         assert "active_buckets" in stats
         assert "last_cleanup" in stats
         assert "cleanup_interval" in stats
@@ -321,10 +313,10 @@ class TestRateLimiterService:
 
     async def test_concurrent_rate_limiting(self, rate_limiter, mock_settings):
         """Test rate limiting under concurrent load."""
+
         async def make_request():
             allowed, _, _ = await rate_limiter.check_rate_limit(
-                ip="192.168.1.1",
-                endpoint_path="/api/v1/audio/upload"
+                ip="192.168.1.1", endpoint_path="/api/v1/audio/upload"
             )
             return allowed
 

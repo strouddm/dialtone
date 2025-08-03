@@ -21,7 +21,11 @@ from app.core.handlers import (
     validation_error_handler,
     voice_notes_error_handler,
 )
-from app.core.middleware import LoggingMiddleware, RateLimitingMiddleware, RequestIDMiddleware
+from app.core.middleware import (
+    LoggingMiddleware,
+    RateLimitingMiddleware,
+    RequestIDMiddleware,
+)
 from app.core.settings import settings
 
 logger = logging.getLogger(__name__)
