@@ -21,8 +21,15 @@ Dialtone is a self-hosted voice-to-Obsidian system that processes audio recordin
 ./scripts/setup.sh --help
 
 # Manual Docker setup (development)
+# 1. Generate SSL certificates for HTTPS
+./scripts/generate-ssl.sh
+
+# 2. Start all services (includes nginx with HTTPS)
 docker-compose up -d
 docker-compose logs -f voice-notes-api
+
+# 3. Access via HTTPS (note: self-signed cert will show browser warning)
+# https://localhost/
 ```
 
 ### Production Deployment
@@ -43,10 +50,28 @@ docker-compose.yml                    # Production Docker config
 nginx.conf                            # Nginx reverse proxy config
 ```
 
+### HTTPS Setup
+```bash
+# Generate SSL certificates for development
+./scripts/generate-ssl.sh
+
+# Validate HTTPS configuration
+./scripts/validate-https.sh
+
+# Test certificate information
+./scripts/generate-ssl.sh info
+
+# Verify certificate and key match
+./scripts/generate-ssl.sh verify
+```
+
 ### Testing
 ```bash
 # Run all tests with coverage
 pytest tests/ -v --cov=app
+
+# Run HTTPS-specific integration tests
+pytest tests/integration/test_https_setup.py -v
 
 # Run specific test file
 pytest tests/api/test_audio.py -v
