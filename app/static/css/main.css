@@ -998,6 +998,64 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* PWA Install Button */
+.install-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  z-index: 10;
+}
+
+.install-button:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.install-button:active {
+  transform: translateY(0);
+}
+
+.install-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.install-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Standalone mode adjustments */
+@media (display-mode: standalone) {
+  .app-header {
+    padding-top: env(safe-area-inset-top, 1rem);
+  }
+  
+  .recorder-container {
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
+  }
+}
+
+.pwa-standalone .app-header {
+  background-color: var(--color-background);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
 @media (max-width: 480px) {
   .recorder-container {
     padding: var(--space-sm);
