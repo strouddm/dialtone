@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  voice-notes-api:
+    build: .
+    container_name: dialtone-api-prod
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=production
+    env_file:
+      - .env.prod
+    volumes:
+      - ${OBSIDIAN_VAULT_PATH}:/app/vault
+      - ./logs:/app/logs
+      - whisper_cache:/app/.cache
+    ports:
+      - "${API_PORT}:8000"
+    networks:
+      - dialtone-network
+    depends_on:
+      - ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+          cpus: '2.0'
+        reservations:
+          memory: 2g
+          cpus: '1.0'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: dialtone-ollama-prod
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - dialtone-network
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 8g
+          cpus: '4.0'
+        reservations:
+          memory: 4g
+          cpus: '2.0'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx:
+    image: nginx:alpine
+    container_name: dialtone-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ssl_certs:/etc/ssl/certs
+      - ssl_private:/etc/ssl/private
+      - ./static:/var/www/html:ro
+    networks:
+      - dialtone-network
+    depends_on:
+      - voice-notes-api
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  certbot:
+    image: certbot/certbot
+    container_name: dialtone-certbot-prod
+    volumes:
+      - ssl_certs:/etc/letsencrypt
+      - ssl_private:/etc/letsencrypt
+      - ./certbot-webroot:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --email ${EMAIL} --agree-tos --no-eff-email -d ${DOMAIN}
+    depends_on:
+      - nginx
+    profiles:
+      - ssl-setup
+
+networks:
+  dialtone-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  whisper_cache:
+    driver: local
+  ollama_data:
+    driver: local
+  ssl_certs:
+    driver: local
+  ssl_private:
+    driver: local

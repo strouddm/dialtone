@@ -124,6 +124,7 @@ class Settings(BaseSettings):
         default=10, description="Maximum active sessions per user", ge=1, le=50
     )
 
+
     # Server
     api_host: str = Field(default="0.0.0.0", description="API host")
     api_port: int = Field(default=8000, description="API port", ge=1, le=65535)
