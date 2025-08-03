@@ -124,6 +124,49 @@ class Settings(BaseSettings):
         default=10, description="Maximum active sessions per user", ge=1, le=50
     )
 
+    # Rate Limiting
+    rate_limiting_enabled: bool = Field(
+        default=True, description="Enable rate limiting middleware"
+    )
+    rate_limit_requests_per_minute: int = Field(
+        default=60,
+        description="Default rate limit requests per minute",
+        ge=1,
+        le=1000,
+    )
+    rate_limit_burst_size: int = Field(
+        default=10,
+        description="Burst size for token bucket algorithm",
+        ge=1,
+        le=100,
+    )
+    rate_limit_cleanup_interval: int = Field(
+        default=300,
+        description="Cleanup interval for expired rate limit buckets (seconds)",
+        ge=60,
+        le=3600,
+    )
+
+    # Endpoint-specific rate limits
+    rate_limit_upload_per_minute: int = Field(
+        default=10,
+        description="Upload endpoint rate limit per minute",
+        ge=1,
+        le=100,
+    )
+    rate_limit_transcribe_per_minute: int = Field(
+        default=5,
+        description="Transcription endpoint rate limit per minute",
+        ge=1,
+        le=50,
+    )
+    rate_limit_health_per_minute: int = Field(
+        default=120,
+        description="Health endpoint rate limit per minute",
+        ge=10,
+        le=1000,
+    )
+
     # Server
     api_host: str = Field(default="0.0.0.0", description="API host")
     api_port: int = Field(default=8000, description="API port", ge=1, le=65535)

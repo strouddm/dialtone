@@ -21,7 +21,7 @@ from app.core.handlers import (
     validation_error_handler,
     voice_notes_error_handler,
 )
-from app.core.middleware import LoggingMiddleware, RequestIDMiddleware
+from app.core.middleware import LoggingMiddleware, RateLimitingMiddleware, RequestIDMiddleware
 from app.core.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -157,9 +157,11 @@ def create_app() -> FastAPI:
     # Mount static files for the web interface
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-    # Add custom middleware
+    # Add custom middleware (order matters - rate limiting first)
     app.add_middleware(RequestIDMiddleware)
     app.add_middleware(LoggingMiddleware)
+    if settings.rate_limiting_enabled:
+        app.add_middleware(RateLimitingMiddleware)
 
     # Register exception handlers
     app.add_exception_handler(
