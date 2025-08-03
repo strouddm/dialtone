@@ -1,0 +1,7 @@
+# Ignore SSL certificates and keys
+ssl/*.crt
+ssl/*.key
+ssl/*.pem
+
+# Keep the ssl directory structure
+!ssl/.gitkeep
