@@ -11,6 +11,9 @@ This directory contains the nginx configuration for running Dialtone with HTTPS 
      -keyout nginx/ssl/dialtone.key \
      -out nginx/ssl/dialtone.crt \
      -subj "/CN=localhost"
+   
+   # Alternative names supported by the base configuration:
+   # - cert.pem / key.pem
    ```
 
 2. Update `nginx.conf` with your server name/IP address if needed.

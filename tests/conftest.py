@@ -11,12 +11,12 @@ import pytest
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 
+# Set testing environment BEFORE importing settings
+os.environ["TESTING"] = "true"
+
 from app.core.settings import settings
 from app.main import create_app
 from app.models.session import SessionState, SessionStatus
-
-# Set testing environment
-os.environ["TESTING"] = "true"
 
 
 @pytest.fixture(scope="session")

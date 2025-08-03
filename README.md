@@ -23,26 +23,38 @@ cd dialtone
 ./scripts/setup.sh
 ```
 
-3. Configure your Obsidian vault path:
+3. Generate SSL certificates for HTTPS:
+```bash
+./scripts/generate-ssl.sh
+```
+
+4. Configure your Obsidian vault path:
 ```bash
 # Edit .env file
 OBSIDIAN_VAULT_PATH=/path/to/your/obsidian/vault
 ```
 
-4. Restart services:
+5. Start services:
 ```bash
-docker-compose restart
+docker-compose up -d
 ```
 
 ## Usage
 
 ### Web Interface
-1. Open http://localhost:8000 in your mobile browser
+1. Open https://localhost in your mobile browser
+   - **Note**: You'll see a security warning for self-signed certificates in development
+   - Click "Advanced" → "Proceed to localhost" to continue
 2. Tap the record button to start recording
 3. Speak your voice note (up to 50MB/5 minutes)
 4. Stop recording when finished
 5. Review and edit the transcription, summary, and keywords
 6. Save to your Obsidian vault
+
+#### PWA Installation (Mobile)
+- **iOS Safari**: Tap share button → "Add to Home Screen"
+- **Android Chrome**: Tap menu → "Add to Home Screen" or "Install App"
+- **Desktop**: Look for install icon in address bar
 
 ### Edit Screen Features
 - **Transcription Editing**: Edit the AI-generated transcription with mobile-friendly text input
@@ -53,9 +65,25 @@ docker-compose restart
 - **Session Recovery**: Resume editing after browser refresh or interruption
 
 ### API Documentation
-- **Interactive Docs**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
+- **Interactive Docs**: https://localhost/docs
+- **Health Check**: https://localhost/health
 - **View Logs**: `docker-compose logs -f`
+
+### HTTPS Setup
+The application runs with HTTPS by default for PWA compatibility:
+
+```bash
+# Generate development certificates
+./scripts/generate-ssl.sh
+
+# Validate HTTPS configuration
+./scripts/validate-https.sh
+
+# View certificate information
+./scripts/generate-ssl.sh info
+```
+
+For production deployment with real SSL certificates, see [Production Setup Guide](docs/deployment/production-setup.md).
 
 ## Development
 

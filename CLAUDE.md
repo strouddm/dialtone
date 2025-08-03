@@ -10,18 +10,68 @@ Dialtone is a self-hosted voice-to-Obsidian system that processes audio recordin
 
 ### Environment Setup
 ```bash
-# Quick setup (< 10 minutes)
+# Development setup (< 10 minutes)
 ./scripts/setup.sh
+# or explicitly: ./scripts/setup.sh --development
 
-# Manual Docker setup
+# Production setup with configuration wizard
+./scripts/setup.sh --production
+
+# Get help and see all options
+./scripts/setup.sh --help
+
+# Manual Docker setup (development)
+# 1. Generate SSL certificates for HTTPS
+./scripts/generate-ssl.sh
+
+# 2. Start all services (includes nginx with HTTPS)
 docker-compose up -d
 docker-compose logs -f voice-notes-api
+
+# 3. Access via HTTPS (note: self-signed cert will show browser warning)
+# https://localhost/
+```
+
+### Production Deployment
+```bash
+# One-command production setup with interactive wizard
+./scripts/setup.sh --production
+
+# Production management commands
+docker-compose restart                 # Restart services
+docker-compose logs -f                # View logs
+./monitor.sh                          # Check system health
+./maintenance.sh                      # Run maintenance tasks
+./renew-certs.sh                      # Renew SSL certificates (if SSL enabled)
+
+# Production configuration files
+.env.prod                             # Production environment
+docker-compose.yml                    # Production Docker config
+nginx.conf                            # Nginx reverse proxy config
+```
+
+### HTTPS Setup
+```bash
+# Generate SSL certificates for development
+./scripts/generate-ssl.sh
+
+# Validate HTTPS configuration
+./scripts/validate-https.sh
+
+# Test certificate information
+./scripts/generate-ssl.sh info
+
+# Verify certificate and key match
+./scripts/generate-ssl.sh verify
 ```
 
 ### Testing
 ```bash
 # Run all tests with coverage
 pytest tests/ -v --cov=app
+
+# Run HTTPS-specific integration tests
+pytest tests/integration/test_https_setup.py -v
 
 # Run specific test file
 pytest tests/api/test_audio.py -v

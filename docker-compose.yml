@@ -6,8 +6,9 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: voice-notes-api
-    ports:
-      - "8000:8000"
+    # Remove direct port exposure - access via nginx proxy
+    expose:
+      - "8000"
     volumes:
       # Mount Obsidian vault directory (update path as needed)
       - ${OBSIDIAN_VAULT_PATH:-./obsidian-vault}:/vault
@@ -88,6 +89,35 @@ services:
       start_period: 120s
     networks:
       - dialtone-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: dialtone-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./app/static:/var/www/html:ro
+    networks:
+      - dialtone-network
+    depends_on:
+      - voice-notes-api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
 networks:
   dialtone-network:
