@@ -3,7 +3,7 @@
 import asyncio
 import hashlib
 import time
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from app.core.settings import settings
 
@@ -157,7 +157,7 @@ class RateLimiterService:
                     f"Rate limiter cleaned up {len(expired_keys)} expired buckets"
                 )
 
-    async def get_stats(self) -> Dict[str, any]:
+    async def get_stats(self) -> Dict[str, Any]:
         """Get rate limiter statistics."""
         return {
             "active_buckets": len(self._buckets),

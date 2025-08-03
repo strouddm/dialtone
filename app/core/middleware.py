@@ -116,7 +116,7 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
             return real_ip.strip()
 
         # Fall back to direct client IP
-        if hasattr(request.client, "host") and request.client.host:
+        if request.client and hasattr(request.client, "host") and request.client.host:
             return request.client.host
 
         # Default fallback

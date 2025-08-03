@@ -67,6 +67,12 @@ async def get_session(request: Request, session_id: str) -> SessionResponse:
         raise HTTPException(status_code=404, detail=str(e))
     except SessionExpiredError as e:
         raise HTTPException(status_code=410, detail=str(e))
+    except Exception as e:
+        logger.error(
+            "Unexpected error retrieving session",
+            extra={"request_id": request_id, "session_id": session_id, "error": str(e)},
+        )
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.put(

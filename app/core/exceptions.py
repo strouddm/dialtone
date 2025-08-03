@@ -96,10 +96,10 @@ class RateLimitError(VoiceNotesError):
     """Error when rate limits are exceeded."""
 
     def __init__(
-        self, 
-        retry_after: int, 
+        self,
+        retry_after: int,
         limit: Optional[int] = None,
-        endpoint: Optional[str] = None
+        endpoint: Optional[str] = None,
     ) -> None:
         """Initialize with retry information."""
         message = f"Rate limit exceeded. Retry after {retry_after} seconds"
