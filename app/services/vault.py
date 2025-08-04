@@ -44,19 +44,21 @@ class VaultService:
         summary: Optional[str] = None,
         keywords: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        title: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        Save formatted transcription to Obsidian vault.
+        Save formatted note and transcript to Obsidian vault.
 
         Args:
             upload_id: Unique upload identifier
             transcription: Raw transcription text
-            summary: Optional AI-generated summary
+            summary: AI-generated summary
             keywords: Optional extracted keywords
             metadata: Optional additional metadata
+            title: Generated title for the note
 
         Returns:
-            Dict containing success status, file path, and filename
+            Dict containing success status, file paths, and filenames
 
         Raises:
             VaultAccessError: If vault is not accessible
@@ -65,42 +67,88 @@ class VaultService:
         # Validate vault access
         await self._validate_vault_access()
 
-        # Format content using existing formatter
-        content = markdown_formatter.format_transcription(
+        # Use provided title or create a fallback
+        note_title = title or "Voice Note"
+
+        # Generate tags from transcription
+        from app.services.ollama import ollama_service
+
+        tags = []
+        if transcription and transcription.strip():
+            try:
+                if await ollama_service.health_check():
+                    tags = await ollama_service.generate_tags(transcription, 3)
+                    logger.info(
+                        "Generated tags for note",
+                        extra={
+                            "upload_id": upload_id,
+                            "tags": tags,
+                        },
+                    )
+            except Exception as e:
+                logger.warning(
+                    "Failed to generate tags, continuing without them",
+                    extra={
+                        "upload_id": upload_id,
+                        "error": str(e),
+                    },
+                )
+
+        # Format main note content (summary only)
+        note_content = markdown_formatter.format_transcription(
             transcription_text=transcription,
             summary=summary,
             keywords=keywords,
             metadata=metadata,
             upload_id=upload_id,
+            title=note_title,
+            tags=tags,
         )
 
-        # Generate filename
-        filename = self._generate_filename(upload_id)
+        # Format transcript content
+        transcript_content = markdown_formatter.format_transcript(
+            transcription_text=transcription,
+            title=note_title,
+            upload_id=upload_id,
+        )
+
+        # Generate filenames based on title
+        note_filename = self._generate_filename_from_title(note_title, False)
+        transcript_filename = self._generate_filename_from_title(note_title, True)
 
         # Handle potential duplicates
-        final_path = await self._handle_duplicate_filename(filename)
+        final_note_path = await self._handle_duplicate_filename(note_filename)
+        final_transcript_path = await self._handle_duplicate_filename(
+            transcript_filename
+        )
 
-        # Write file atomically
-        await self._atomic_write(final_path, content)
+        # Write both files atomically
+        await self._atomic_write(final_note_path, note_content)
+        await self._atomic_write(final_transcript_path, transcript_content)
 
         # Prepare response
-        relative_path = final_path.relative_to(self.vault_path)
+        note_relative_path = final_note_path.relative_to(self.vault_path)
+        transcript_relative_path = final_transcript_path.relative_to(self.vault_path)
 
         logger.info(
-            "Successfully saved transcription to vault",
+            "Successfully saved note and transcript to vault",
             extra={
                 "upload_id": upload_id,
-                "vault_filename": final_path.name,
-                "vault_path": str(relative_path),
-                "content_size": len(content),
+                "title": note_title,
+                "note_filename": final_note_path.name,
+                "transcript_filename": final_transcript_path.name,
+                "note_size": len(note_content),
+                "transcript_size": len(transcript_content),
             },
         )
 
         return {
             "success": True,
-            "file_path": str(relative_path),
-            "filename": final_path.name,
-            "full_path": str(final_path),
+            "note_file_path": str(note_relative_path),
+            "note_filename": final_note_path.name,
+            "transcript_file_path": str(transcript_relative_path),
+            "transcript_filename": final_transcript_path.name,
+            "title": note_title,
         }
 
     async def _validate_vault_access(self) -> None:
@@ -148,19 +196,19 @@ class VaultService:
                 details={"vault_path": str(self.vault_path), "error": str(e)},
             )
 
-    def _generate_filename(self, upload_id: str) -> str:
+    def _generate_filename_from_title(self, title: str, is_transcript: bool) -> str:
         """
-        Generate a safe filename for the note.
+        Generate a safe filename based on the note title.
 
         Args:
-            upload_id: Upload identifier
+            title: The note title
+            is_transcript: Whether this is a transcript file
 
         Returns:
             Generated filename with .md extension
         """
-        timestamp = datetime.now()
         return (
-            markdown_formatter.format_for_obsidian_filename(upload_id, timestamp)
+            markdown_formatter.format_for_obsidian_filename(title, is_transcript)
             + ".md"
         )
 
