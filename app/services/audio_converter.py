@@ -48,7 +48,11 @@ class AudioConverter:
 
             # Get input file info
             probe = ffmpeg.probe(str(input_path))
-            duration = float(probe["format"]["duration"])
+
+            # Try to get duration, but don't fail if it's missing
+            duration = None
+            if "format" in probe and "duration" in probe["format"]:
+                duration = float(probe["format"]["duration"])
 
             # Get audio stream info
             audio_streams = [
@@ -69,7 +73,7 @@ class AudioConverter:
                     format="wav",
                 )
                 .overwrite_output()  # Overwrite if exists
-                .run(capture_stdout=True, capture_stderr=True, check=True)
+                .run(capture_stdout=True, capture_stderr=True)
             )
 
             # Verify output file was created
@@ -81,12 +85,12 @@ class AudioConverter:
                 extra={
                     "input_path": str(input_path),
                     "output_path": str(output_path),
-                    "duration_seconds": duration,
+                    "duration_seconds": duration if duration is not None else "unknown",
                     "output_size": output_path.stat().st_size,
                 },
             )
 
-            return output_path, duration
+            return output_path, duration if duration is not None else 0.0
 
         except ffmpeg.Error as e:
             error_msg = (

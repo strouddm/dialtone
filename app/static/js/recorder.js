@@ -401,13 +401,77 @@ class AudioRecorder {
     this.handleError(error);
   }
 
-  handleUploadSuccess(result) {
+  async handleUploadSuccess(result) {
     this.updateStatus('Recording uploaded successfully!');
     console.log('Upload result:', result);
     
-    setTimeout(() => {
-      this.reset();
-    }, 2000);
+    // Automatically transcribe the uploaded audio
+    try {
+      this.updateStatus('Transcribing audio...');
+      const transcriptionResult = await this.transcribeAudio(result.upload_id);
+      console.log('Transcription result:', transcriptionResult);
+      
+      // Save to vault
+      this.updateStatus('Saving to Obsidian vault...');
+      const vaultResult = await this.saveToVault(
+        result.upload_id,
+        transcriptionResult.transcription.text,
+        transcriptionResult.summary,
+        transcriptionResult.keywords
+      );
+      console.log('Vault save result:', vaultResult);
+      
+      this.updateStatus('Note saved to Obsidian vault!');
+      
+      setTimeout(() => {
+        this.reset();
+      }, 3000);
+    } catch (error) {
+      console.error('Error processing recording:', error);
+      this.handleError(error);
+    }
+  }
+  
+  async transcribeAudio(uploadId) {
+    const response = await fetch('/api/v1/audio/transcribe', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        upload_id: uploadId,
+        include_summary: true
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || `Transcription failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  }
+  
+  async saveToVault(uploadId, transcription, summary, keywords) {
+    const response = await fetch('/api/v1/vault/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        upload_id: uploadId,
+        transcription: transcription,
+        summary: summary,
+        keywords: keywords
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || `Vault save failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
   }
 
   reset() {

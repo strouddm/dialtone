@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Dialtone is a self-hosted voice-to-Obsidian system that processes audio recordings locally using AI (Whisper for transcription, Ollama for summarization) and saves formatted notes to an Obsidian vault. The system is built with FastAPI and runs in Docker containers.
+Dialtone is a complete self-hosted Progressive Web App (PWA) that transforms voice recordings into formatted Obsidian notes using local AI processing. The system features a full mobile-optimized frontend with offline support, session management, draft auto-saving, Whisper transcription, Ollama summarization, and direct Obsidian vault integration. Built with FastAPI backend and runs as a 3-service Docker architecture with nginx reverse proxy providing HTTPS/PWA support.
 
 ## Development Commands
 
@@ -122,20 +122,41 @@ docker-compose exec voice-notes-api /bin/bash
 app/
 ├── main.py              # FastAPI app creation & lifespan management
 ├── config.py            # Logging setup
-├── api/                 # API endpoints (health, audio)
+├── api/                 # API endpoints (health, audio, sessions, vault)
+│   ├── audio.py         # Audio upload and processing endpoints
+│   ├── health.py        # Health check endpoints
+│   ├── sessions.py      # Session management (drafts, recovery)
+│   └── vault.py         # Obsidian vault operations
 ├── core/                # Core infrastructure
 │   ├── settings.py      # Pydantic settings with validation
 │   ├── exceptions.py    # Custom exception classes
 │   ├── handlers.py      # Exception handlers
-│   ├── middleware.py    # Request ID & logging middleware
+│   ├── middleware.py    # Request ID, logging, rate limiting middleware
+│   ├── validators.py    # Data validation utilities
 │   └── health/          # Health check system
-└── services/            # Business logic services
-    ├── audio_converter.py    # FFmpeg audio processing
-    ├── whisper_model.py      # Whisper model management
-    ├── transcription.py      # Transcription orchestration
-    ├── ollama.py            # Ollama AI summarization
-    ├── markdown_formatter.py # Obsidian markdown generation
-    └── upload.py            # File upload handling
+├── models/              # Data models and schemas
+│   ├── audio.py         # Audio processing models
+│   ├── session.py       # Session management models
+│   └── common.py        # Shared model components
+├── services/            # Business logic services
+│   ├── audio_converter.py    # FFmpeg audio processing
+│   ├── whisper_model.py      # Whisper model management
+│   ├── transcription.py      # Transcription orchestration
+│   ├── ollama.py            # Ollama AI summarization
+│   ├── markdown_formatter.py # Obsidian markdown generation
+│   ├── upload.py            # File upload handling
+│   ├── session_manager.py   # Session state management
+│   ├── session_storage.py   # Session persistence
+│   ├── rate_limiter.py      # API rate limiting
+│   └── vault.py             # Obsidian vault operations
+├── static/              # PWA frontend (HTML/CSS/JS)
+│   ├── index.html       # Main PWA interface
+│   ├── manifest.json    # PWA manifest
+│   ├── service-worker.js # Offline support
+│   ├── css/            # Stylesheets
+│   ├── js/             # Frontend JavaScript
+│   └── assets/         # PWA icons and assets
+└── tasks/               # Background tasks and cleanup
 ```
 
 ### Service Layer Pattern
@@ -166,10 +187,12 @@ Services are designed to be:
 5. Markdown formatting (`markdown_formatter.py`)
 6. Obsidian vault saving
 
-**Container Architecture**: Two-service Docker setup:
-- `voice-notes-api`: FastAPI app with Whisper models
-- `ollama`: Separate AI service for summarization
-- Shared network with health checks and resource limits
+**Container Architecture**: Three-service Docker setup:
+- `nginx`: Reverse proxy providing HTTPS, PWA asset serving, rate limiting, and SSL termination
+- `voice-notes-api`: FastAPI backend with Whisper models, session management, and PWA API
+- `ollama`: Separate AI service for LLM summarization
+- All services connected via shared Docker network with health checks and resource limits
+- nginx serves PWA static assets and proxies API requests to backend
 
 ## Configuration
 

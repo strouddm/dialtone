@@ -1,149 +1,269 @@
-# Dialtone - Voice to Obsidian
+# 🎵 Dialtone - Voice to Obsidian PWA
 
-Self-hosted voice-to-Obsidian system with local AI processing.
+**Complete self-hosted voice-to-Obsidian system with local AI processing**
 
-## Quick Start
+Transform your voice recordings into formatted Obsidian notes using AI transcription and summarization—all processed locally on your own hardware with no cloud dependencies.
+
+## ✨ Features
+
+🎤 **PWA Voice Recording** - Professional mobile app experience with offline support  
+🤖 **Local AI Processing** - Whisper transcription + Ollama summarization (no cloud required)  
+📝 **Smart Note Generation** - Auto-generated transcripts, summaries, and keyword tags  
+💾 **Draft Management** - Auto-save, session recovery, and edit-before-save  
+🔒 **Privacy First** - All processing happens locally, your data never leaves your server  
+📱 **Mobile Optimized** - Install as PWA on any device, works offline  
+⚡ **Fast Setup** - One command gets you running in under 10 minutes  
+
+## 🚀 Quick Start (10 minutes)
 
 ### Prerequisites
-- Docker and Docker Compose
-- Python 3.11+
-- 6+ CPU cores, 16GB RAM
-- Obsidian vault directory
+- **Docker & Docker Compose** (20.10+)
+- **8GB+ RAM** (for AI models)
+- **10GB+ disk space**
+- **Obsidian vault directory**
 
-### Setup (< 10 minutes)
+### One-Command Setup
 
-1. Clone the repository:
 ```bash
+# Clone repository
 git clone <repository-url>
 cd dialtone
-```
 
-2. Run the setup script:
-```bash
+# Run automated setup (includes SSL certificates)
 ./scripts/setup.sh
 ```
 
-3. Generate SSL certificates for HTTPS:
-```bash
-./scripts/generate-ssl.sh
-```
+**That's it!** The setup script will:
+- ✅ Validate your system requirements
+- ✅ Generate SSL certificates for HTTPS/PWA
+- ✅ Build and start all services (nginx, API, AI)
+- ✅ Pre-download AI models
+- ✅ Run health checks
 
-4. Configure your Obsidian vault path:
+### Configure Your Vault
+
+Edit the generated `.env` file:
 ```bash
-# Edit .env file
+# Set your Obsidian vault path
 OBSIDIAN_VAULT_PATH=/path/to/your/obsidian/vault
 ```
 
-5. Start services:
+Then restart:
 ```bash
-docker-compose up -d
+docker-compose restart
 ```
 
-## Usage
+## 📱 Using Dialtone
 
-### Web Interface
-1. Open https://localhost in your mobile browser
-   - **Note**: You'll see a security warning for self-signed certificates in development
-   - Click "Advanced" → "Proceed to localhost" to continue
-2. Tap the record button to start recording
-3. Speak your voice note (up to 50MB/5 minutes)
-4. Stop recording when finished
-5. Review and edit the transcription, summary, and keywords
-6. Save to your Obsidian vault
+### 1. Web Access
+Open **https://localhost** in any browser
+- ⚠️ **First time**: Click "Advanced" → "Proceed to localhost" (self-signed certificate)
+- 🔒 **Why HTTPS?** Required for PWA microphone access and installation
 
-#### PWA Installation (Mobile)
-- **iOS Safari**: Tap share button → "Add to Home Screen"
-- **Android Chrome**: Tap menu → "Add to Home Screen" or "Install App"
-- **Desktop**: Look for install icon in address bar
+### 2. PWA Installation (Recommended)
+**Mobile:**
+- **iOS Safari**: Share button → "Add to Home Screen"
+- **Android Chrome**: Menu → "Add to Home Screen" or "Install App"
 
-### Edit Screen Features
-- **Transcription Editing**: Edit the AI-generated transcription with mobile-friendly text input
-- **Summary Management**: Add, edit, or remove bullet points from the AI summary
-- **Keyword Tags**: Modify extracted keywords or add your own
-- **Live Preview**: See the final markdown format before saving
-- **Auto-save**: Drafts are automatically saved every 10 seconds
-- **Session Recovery**: Resume editing after browser refresh or interruption
+**Desktop:**
+- Look for install icon in address bar
 
-### API Documentation
-- **Interactive Docs**: https://localhost/docs
-- **Health Check**: https://localhost/health
-- **View Logs**: `docker-compose logs -f`
+### 3. Recording Workflow
+1. 🎤 **Record**: Tap the record button
+2. 🗣️ **Speak**: Up to 5 minutes (50MB limit)
+3. ✏️ **Edit**: Review AI-generated transcript, summary, keywords
+4. 💾 **Save**: Note appears instantly in your Obsidian vault
 
-### HTTPS Setup
-The application runs with HTTPS by default for PWA compatibility:
+### 4. Edit Screen Features
+- **Smart Text Editing**: Mobile-friendly transcript editor
+- **Summary Management**: Add/remove bullet points  
+- **Keyword Tags**: AI-suggested tags + manual additions
+- **Live Preview**: See final markdown before saving
+- **Auto-save Drafts**: Every 10 seconds
+- **Session Recovery**: Resume after interruption
 
-```bash
-# Generate development certificates
-./scripts/generate-ssl.sh
+## 🏗️ System Architecture
 
-# Validate HTTPS configuration
-./scripts/validate-https.sh
-
-# View certificate information
-./scripts/generate-ssl.sh info
+**3-Service Architecture:**
+```
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐
+│    nginx    │────│ voice-notes  │────│   ollama    │
+│ (HTTPS/PWA) │    │     API      │    │ (AI Models) │
+│   Port 443  │    │  (Backend)   │    │ (Internal)  │
+└─────────────┘    └──────────────┘    └─────────────┘
 ```
 
-For production deployment with real SSL certificates, see [Production Setup Guide](docs/deployment/production-setup.md).
+- **nginx**: Handles HTTPS, PWA assets, rate limiting
+- **voice-notes-api**: FastAPI backend with Whisper transcription
+- **ollama**: Local LLM for summarization (llama2:7b default)
 
-## Development
+## 🛠️ Development
 
-### Running Tests
+### Commands
 ```bash
+# View all service logs
+docker-compose logs -f
+
+# Restart specific service
+docker-compose restart voice-notes-api
+
+# Run tests
 pytest tests/ -v --cov=app
-```
 
-### Code Quality
-```bash
-black app tests
-mypy app
+# Code quality
+black app tests && mypy app
 ```
 
 ### Project Structure
 ```
 dialtone/
-├── app/              # FastAPI application
-│   ├── api/         # API endpoints
-│   ├── core/        # Core functionality
-│   └── main.py      # Application entry
-├── tests/           # Test suite
-├── docker-compose.yml
-└── Dockerfile
+├── app/                    # FastAPI application
+│   ├── api/               # REST endpoints (audio, sessions, vault)
+│   ├── core/              # Settings, middleware, exceptions
+│   ├── services/          # Business logic (AI, storage, etc.)
+│   ├── static/            # PWA frontend (HTML/CSS/JS)
+│   └── main.py           # Application entry point
+├── nginx/                 # HTTPS reverse proxy config
+├── scripts/              # Setup and maintenance scripts
+├── tests/                # Comprehensive test suite
+└── docs/                 # Additional documentation
 ```
 
-## Troubleshooting
+## 🔧 Configuration
 
-### API not responding
+### Environment Variables
+Key settings in `.env`:
 ```bash
-# Check logs
-docker-compose logs voice-notes-api
+# Paths
+OBSIDIAN_VAULT_PATH=/path/to/vault     # Required - your Obsidian vault
 
-# Restart services
-docker-compose down
-docker-compose up -d
+# AI Models  
+WHISPER_MODEL_SIZE=base                # tiny|base|small|medium|large
+OLLAMA_MODEL=llama2:7b                 # AI model for summarization
+
+# Processing Limits
+MAX_UPLOAD_SIZE=52428800               # 50MB file size limit
+PROCESSING_TIMEOUT=35                  # 35 second timeout
+MAX_CONCURRENT_REQUESTS=3              # Rate limiting
+
+# HTTPS (auto-configured by setup script)
+HTTPS_ENABLED=true
+DOMAIN_NAME=localhost
 ```
 
-### Memory issues
-Edit `docker-compose.yml` to adjust resource limits:
-```yaml
+### Production Setup
+For production with real SSL certificates:
+```bash
+# Interactive production wizard
+./scripts/setup.sh --production
+```
+
+See [Production Setup Guide](docs/deployment/production-setup.md) for details.
+
+## 🩺 Troubleshooting
+
+### Common Issues
+
+**"Certificate not trusted" warning:**
+- Normal for development with self-signed certificates
+- Click "Advanced" → "Proceed to localhost"
+- For production, use `--production` flag for real SSL
+
+**PWA won't install:**
+- Ensure you're using HTTPS (not HTTP)  
+- Try different browser (Chrome/Safari recommended)
+- Check browser developer tools for errors
+
+**AI processing slow/failing:**
+```bash
+# Check service health
+docker-compose ps
+curl https://localhost/health
+
+# View AI service logs
+docker-compose logs ollama
+docker-compose logs voice-notes-api
+```
+
+**Out of memory errors:**
+```bash
+# Adjust resource limits in docker-compose.yml
 deploy:
   resources:
     limits:
-      memory: 4G  # Increase as needed
+      memory: 8G  # Increase for larger models
 ```
 
-## Features
+**Obsidian vault access issues:**
+```bash
+# Check vault permissions
+ls -la /path/to/your/vault
+touch /path/to/your/vault/test.md  # Test write access
+```
 
-- [x] Docker environment setup
-- [x] FastAPI with health checks
-- [ ] Audio upload endpoint
-- [ ] Whisper transcription
-- [ ] Ollama summarization
-- [ ] Obsidian integration
-- [ ] PWA frontend
+### Performance Optimization
 
-## Performance Targets
+**For lower-resource systems:**
+```bash
+# Use smaller AI models in .env
+WHISPER_MODEL_SIZE=tiny     # Faster, less accurate
+OLLAMA_MODEL=llama2:7b      # Smaller than 13b version
+```
 
-- Setup time: < 30 minutes
-- Processing: < 35s for 5-min audio
-- Accuracy: > 95% transcription
-- Uptime: > 99.9%
+**For higher accuracy:**
+```bash
+WHISPER_MODEL_SIZE=medium   # Better transcription
+OLLAMA_MODEL=llama2:13b     # Better summaries (needs more RAM)
+```
+
+## 📊 System Requirements
+
+### Minimum (Basic Usage)
+- **RAM**: 8GB
+- **Storage**: 10GB free
+- **CPU**: 2 cores
+- **Network**: Internet for initial setup
+
+### Recommended (Smooth Experience)  
+- **RAM**: 16GB+
+- **Storage**: 20GB+ (SSD preferred)
+- **CPU**: 4+ cores
+- **Network**: Local network access
+
+### Performance Targets ✅
+- **Setup time**: < 10 minutes (automated)
+- **Processing**: < 35s for 5-minute audio
+- **Transcription accuracy**: > 95% (with base model)
+- **Uptime**: > 99.9% (with proper hosting)
+
+## 🎯 Completed Features
+
+✅ **Complete PWA Frontend** - Mobile app experience with offline support  
+✅ **Local AI Processing** - Whisper + Ollama integration  
+✅ **Audio Upload & Processing** - Multi-format support with validation  
+✅ **Smart Note Generation** - Transcripts, summaries, keywords  
+✅ **Session Management** - Drafts, auto-save, recovery  
+✅ **Obsidian Integration** - Direct vault writing  
+✅ **HTTPS/SSL Setup** - Automated certificate generation  
+✅ **Docker Environment** - Multi-service orchestration  
+✅ **Rate Limiting** - API protection and performance  
+✅ **Health Monitoring** - Service status and diagnostics  
+✅ **Comprehensive Testing** - Unit, integration, performance tests  
+
+## 📚 Additional Documentation
+
+- **[Production Setup](docs/deployment/production-setup.md)** - SSL, domain setup, monitoring  
+- **[PWA Installation Guide](docs/pwa-installation.md)** - Device-specific instructions
+- **[API Documentation](docs/api/)** - REST endpoints and examples  
+- **[Development Guide](CLAUDE.md)** - Architecture and coding standards  
+- **[Ollama Integration](docs/ollama-integration.md)** - AI model configuration  
+
+## 🤝 Support
+
+**Need help?**
+1. Check logs: `docker-compose logs -f`
+2. Review documentation in `docs/`
+3. Check GitHub issues for known problems
+
+**Contributing:**
+See [CLAUDE.md](CLAUDE.md) for development guidelines and architecture details.

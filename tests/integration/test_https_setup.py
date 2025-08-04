@@ -1,14 +1,14 @@
 """Integration tests for HTTPS setup and nginx configuration."""
 
 import asyncio
-import ssl
 import socket
+import ssl
 import subprocess
 import time
 from urllib.parse import urljoin
 
-import pytest
 import httpx
+import pytest
 
 
 class TestHTTPSSetup:
@@ -58,6 +58,7 @@ class TestHTTPSSetup:
     def test_ssl_certificate_validity(self):
         """Test SSL certificate validity and properties."""
         import os
+
         from cryptography import x509
         from cryptography.hazmat.backends import default_backend
 
