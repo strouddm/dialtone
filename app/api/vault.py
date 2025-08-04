@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.core.exceptions import VaultError
 from app.models.common import SuccessResponse
+from app.services.ollama import ollama_service
 from app.services.vault import vault_service
 
 logger = logging.getLogger(__name__)
@@ -36,8 +37,17 @@ class VaultSaveRequest(BaseModel):
 class VaultSaveResponse(SuccessResponse):
     """Response model for vault save operation."""
 
-    file_path: str = Field(..., description="Relative path within vault")
-    filename: str = Field(..., description="Generated filename")
+    note_file_path: str = Field(
+        ..., description="Relative path of main note within vault"
+    )
+    note_filename: str = Field(..., description="Generated filename for main note")
+    transcript_file_path: str = Field(
+        ..., description="Relative path of transcript within vault"
+    )
+    transcript_filename: str = Field(
+        ..., description="Generated filename for transcript"
+    )
+    title: str = Field(..., description="Generated title for the note")
 
 
 @router.post(
@@ -91,31 +101,64 @@ async def save_to_vault(request: VaultSaveRequest) -> VaultSaveResponse:
     """
     Save transcription to Obsidian vault.
 
-    This endpoint formats the transcription using markdown with YAML frontmatter
-    and saves it to the configured Obsidian vault directory.
+    This endpoint generates a title from the content, formats the transcription
+    and saves both a main note (with summary) and separate transcript file.
     """
     try:
+        # Generate title from transcription text
+        title = None
+        if request.transcription and request.transcription.strip():
+            try:
+                if await ollama_service.health_check():
+                    title = await ollama_service.generate_title(request.transcription)
+                    logger.info(
+                        "Generated title for note",
+                        extra={
+                            "upload_id": request.upload_id,
+                            "title": title,
+                        },
+                    )
+                else:
+                    logger.warning(
+                        "Ollama service unavailable, using fallback title",
+                        extra={"upload_id": request.upload_id},
+                    )
+            except Exception as e:
+                logger.warning(
+                    "Failed to generate title, using fallback",
+                    extra={
+                        "upload_id": request.upload_id,
+                        "error": str(e),
+                    },
+                )
+
         result = await vault_service.save_transcription_to_vault(
             upload_id=request.upload_id,
             transcription=request.transcription,
             summary=request.summary,
             keywords=request.keywords,
             metadata=request.metadata,
+            title=title,
         )
 
         logger.info(
-            "Transcription saved to vault",
+            "Note and transcript saved to vault",
             extra={
                 "upload_id": request.upload_id,
-                "vault_filename": result["filename"],
+                "title": result["title"],
+                "note_filename": result["note_filename"],
+                "transcript_filename": result["transcript_filename"],
             },
         )
 
         return VaultSaveResponse(
             success=True,
-            message=f"Transcription saved to vault as {result['filename']}",
-            file_path=result["file_path"],
-            filename=result["filename"],
+            message=f"Note saved as '{result['title']}' with separate transcript",
+            note_file_path=result["note_file_path"],
+            note_filename=result["note_filename"],
+            transcript_file_path=result["transcript_file_path"],
+            transcript_filename=result["transcript_filename"],
+            title=result["title"],
             request_id=None,
         )
 

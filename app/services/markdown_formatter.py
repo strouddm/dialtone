@@ -17,77 +17,105 @@ class MarkdownFormatter:
         keywords: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         upload_id: Optional[str] = None,
+        title: Optional[str] = None,
+        tags: Optional[List[str]] = None,
     ) -> str:
         """
-        Format transcription with YAML frontmatter for Obsidian.
+        Format transcription with title, date, and tags for Obsidian.
 
         Args:
-            transcription_text: The main transcription content
-            summary: Optional bullet-point summary
+            transcription_text: The main transcription content (for separate transcript file)
+            summary: AI-generated summary (main content)
             keywords: Optional list of extracted keywords
             metadata: Optional additional metadata to include
             upload_id: Optional upload identifier
+            title: Generated title for the note
+            tags: Optional list of tags (max 3)
 
         Returns:
-            str: Formatted markdown with YAML frontmatter
+            str: Formatted markdown with title, date, tags, and summary only
         """
-        if not transcription_text.strip():
-            logger.warning("Empty transcription text provided to formatter")
-            transcription_text = "No transcription content available."
+        # Use provided title or create a fallback, make it lowercase
+        note_title = (title or "voice note").lower()
 
-        # Build YAML frontmatter
-        frontmatter: Dict[str, Any] = {
-            "type": "voice-note",
-            "created": datetime.now().isoformat(),
-            "processed_by": "dialtone",
-        }
+        # Format the date
+        current_date = datetime.now().strftime("%Y-%m-%d")
 
-        if upload_id:
-            frontmatter["upload_id"] = upload_id
+        # Build the content with title and date
+        content_parts = [f"# {note_title}", f"date: {current_date}"]
 
-        if keywords and len(keywords) > 0:
-            # Clean and validate keywords for Obsidian tags
-            clean_keywords = self._clean_keywords_for_obsidian(keywords)
-            if clean_keywords:
-                frontmatter["tags"] = clean_keywords
+        # Add tags if provided (max 3)
+        if tags and len(tags) > 0:
+            # Limit to 3 tags and format with # prefix
+            tag_list = tags[:3]
+            formatted_tags = [f"#{tag.lower().replace(' ', '-')}" for tag in tag_list]
+            content_parts.append(f"tags: {' '.join(formatted_tags)}")
 
-        if metadata:
-            # Merge additional metadata, avoiding conflicts
-            for key, value in metadata.items():
-                if key not in frontmatter:
-                    frontmatter[key] = value
+        content_parts.append("")
 
-        # Format YAML frontmatter
-        yaml_lines = ["---"]
-        for key, value in frontmatter.items():
-            if isinstance(value, list):
-                yaml_lines.append(f"{key}:")
-                for item in value:
-                    yaml_lines.append(f"  - {item}")
-            elif isinstance(value, str) and ("\n" in value or ":" in value):
-                # Quote strings that contain special characters
-                yaml_lines.append(f'{key}: "{value}"')
-            else:
-                yaml_lines.append(f"{key}: {value}")
-        yaml_lines.append("---")
-        yaml_lines.append("")
-
-        # Build content sections
-        content_parts = yaml_lines.copy()
-
+        # Add the summary as the main content (no section header)
         if summary and summary.strip():
-            content_parts.extend(["## Summary", "", summary.strip(), ""])
-
-        content_parts.extend(["## Transcription", "", transcription_text.strip()])
+            content_parts.append(summary.strip())
+        else:
+            content_parts.append("No summary available.")
 
         result = "\n".join(content_parts)
 
         logger.info(
-            "Formatted transcription for Obsidian",
+            "Formatted note for Obsidian",
             extra={
                 "upload_id": upload_id,
+                "title": note_title,
                 "has_summary": summary is not None,
-                "keyword_count": len(keywords) if keywords else 0,
+                "content_length": len(result),
+            },
+        )
+
+        return result
+
+    def format_transcript(
+        self,
+        transcription_text: str,
+        title: Optional[str] = None,
+        upload_id: Optional[str] = None,
+    ) -> str:
+        """
+        Format transcript as a separate file.
+
+        Args:
+            transcription_text: The transcription content
+            title: Note title for the transcript
+            upload_id: Optional upload identifier
+
+        Returns:
+            str: Formatted transcript markdown
+        """
+        if not transcription_text.strip():
+            logger.warning("Empty transcription text provided to transcript formatter")
+            transcription_text = "No transcription content available."
+
+        # Use provided title or create a fallback, make it lowercase
+        base_title = (title or "voice note").lower()
+        transcript_title = f"{base_title} - transcript"
+
+        # Format the date
+        current_date = datetime.now().strftime("%Y-%m-%d")
+
+        # Build the transcript content
+        content_parts = [
+            f"# {transcript_title}",
+            f"date: {current_date}",
+            "",
+            transcription_text.strip(),
+        ]
+
+        result = "\n".join(content_parts)
+
+        logger.info(
+            "Formatted transcript for Obsidian",
+            extra={
+                "upload_id": upload_id,
+                "title": transcript_title,
                 "content_length": len(result),
             },
         )
@@ -158,30 +186,56 @@ class MarkdownFormatter:
         return clean_keywords
 
     def format_for_obsidian_filename(
-        self, upload_id: str, timestamp: Optional[datetime] = None
+        self, title: str, is_transcript: bool = False
     ) -> str:
         """
-        Generate a safe filename for Obsidian.
+        Generate a safe filename for Obsidian based on title (lowercase with spaces).
 
         Args:
-            upload_id: Upload identifier
-            timestamp: Optional timestamp, defaults to now
+            title: The note title to use for filename
+            is_transcript: Whether this is a transcript file
 
         Returns:
-            str: Safe filename without extension
+            str: Safe filename without extension (lowercase with spaces)
         """
-        if timestamp is None:
-            timestamp = datetime.now()
+        # Start with the title, make lowercase
+        filename = title.strip().lower()
 
-        # Format timestamp for filename
-        timestamp_str = timestamp.strftime("%Y-%m-%d_%H-%M")
+        # Add transcript suffix if needed
+        if is_transcript:
+            filename += " transcript"
 
-        # Create safe filename
-        filename = f"voice-note_{timestamp_str}_{upload_id[:8]}"
+        # Replace problematic characters but keep spaces
+        filename = filename.replace("'", "")
+        filename = filename.replace('"', "")
+        filename = filename.replace(":", "")
+        filename = filename.replace(";", "")
+        filename = filename.replace(",", "")
+        filename = filename.replace("?", "")
+        filename = filename.replace("!", "")
+        filename = filename.replace("/", " ")
+        filename = filename.replace("\\", " ")
+        filename = filename.replace("|", " ")
+        filename = filename.replace("\t", " ")
+        filename = filename.replace("\n", " ")
+        filename = filename.replace("\r", " ")
 
-        # Remove any potentially problematic characters
-        safe_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+        # Replace multiple consecutive spaces with single space
+        while "  " in filename:
+            filename = filename.replace("  ", " ")
+
+        # Remove leading/trailing spaces
+        filename = filename.strip()
+
+        # Keep only safe characters (letters, numbers, spaces, hyphens, underscores)
+        safe_chars = "abcdefghijklmnopqrstuvwxyz0123456789 -_"
         filename = "".join(c for c in filename if c in safe_chars)
+
+        # Ensure filename is not empty and not too long
+        if not filename:
+            filename = "voice note"
+        elif len(filename) > 100:
+            filename = filename[:100].rstrip()
 
         return filename
 
